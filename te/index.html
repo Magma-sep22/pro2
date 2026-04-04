@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>TCE SAT Ground Station | WEB CONTROL</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@500;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        /* --- THEME VARIABLES --- */
+        :root {
+            --bg-core: #050a10;
+            --bg-panel: rgba(10, 20, 30, 0.9);
+            --pri: #f36c21;
+            --pri-cyan: #00f0ff; 
+            --sec: #0099ff; 
+            --warn: #ffcc00; 
+            --danger: #ff003c; 
+            --success: #00ff9d; 
+            --glass-border: 1px solid rgba(243, 108, 33, 0.3);
+            --hud-glow: 0 0 10px rgba(243, 108, 33, 0.4);
+            --font-head: 'Orbitron', sans-serif;
+            --font-ui: 'Rajdhani', sans-serif; 
+            --font-data: 'JetBrains Mono', monospace;
+        }
+
+        /* --- GLOBAL RESET --- */
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-core);
+            color: var(--pri);
+            font-family: var(--font-ui);
+            
+            /* ใช้ Flexbox จัดหน้าเว็บแทน เพื่อแก้ปัญหา Header หาย */
+            display: flex;
+            flex-direction: column; 
+            
+            /* ใช้ dvh (Dynamic Viewport Height) เพื่อแก้ปัญหามือถือ/iPad */
+            height: 100dvh;
+            width: 100vw;
+            overflow: hidden;
+            
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(243, 108, 33, 0.1) 0%, transparent 70%),
+                linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.85) 0%, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+        }
+
+        /* --- HEADER (TITLE BAR) FIX --- */
+        .title-bar {
+            /* ให้ความสูงยืดหยุ่นตามเนื้อหา + ขอบ Safe Area */
+            height: auto;
+            min-height: 60px;
+            flex-shrink: 0; /* ห้ามโดนบีบให้เล็กลง */
+            
+            background: rgba(10,15,20,0.95);
+            border-bottom: 1px solid var(--glass-border);
+            
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            
+            /* --- SAFE AREA PADDING (หัวใจสำคัญแก้ปัญหา iPad) --- */
+            padding-top: max(10px, env(safe-area-inset-top)); 
+            padding-bottom: 10px;
+            padding-left: max(20px, env(safe-area-inset-left));
+            padding-right: max(20px, env(safe-area-inset-right));
+            
+            z-index: 2000;
+        }
+
+        .app-logo img { 
+            height: 40px !important; width: auto; 
+        }
+
+        .nav-tabs { 
+            display: flex; gap: 5px; flex-wrap: wrap; justify-content: center;
+        }
+        .nav-btn {
+            background: transparent; border: 1px solid rgba(243, 108, 33, 0.3); color: #aaa; padding: 6px 15px;
+            font-family: var(--font-ui); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .nav-btn.active { background: var(--pri); color: #000; border-color: var(--pri); }
+
+        .sys-info { 
+            font-family: var(--font-data); font-size: 12px; color: var(--pri); 
+            white-space: nowrap;
+        }
+
+        /* --- LAYOUT GRID (ปรับใหม่ให้เข้ากับ Flexbox Body) --- */
+        .grid-container {
+            /* ให้ Grid ยืดเต็มพื้นที่ที่เหลือจาก Header อัตโนมัติ */
+            flex-grow: 1; 
+            height: auto; /* ไม่ต้องคำนวณ calc() แล้ว */
+            
+            display: grid; grid-template-columns: 280px 1fr; gap: 15px; padding: 15px;
+            overflow: hidden;
+            
+            /* เว้นระยะขอบล่างเผื่อขีดขาวๆ ของ iPad */
+            padding-bottom: max(15px, env(safe-area-inset-bottom));
+            padding-left: max(15px, env(safe-area-inset-left));
+            padding-right: max(15px, env(safe-area-inset-right));
+        }
+        
+        .grid-container.full-mode { grid-template-columns: 0px 1fr; gap: 0; }
+        .grid-container.full-mode .sidebar { opacity: 0; pointer-events: none; padding: 0; width: 0; display: none; }
+
+        /* PANELS */
+        .hud-panel {
+            background: var(--bg-panel); border: var(--glass-border); border-radius: 4px;
+            display: flex; flex-direction: column; backdrop-filter: blur(5px);
+        }
+        .p-content { padding: 15px; flex-grow: 1; overflow: hidden; display: flex; flex-direction: column; }
+        
+        .hud-header {
+            font-family: var(--font-head); font-size: 12px; color: var(--pri); margin-bottom: 10px;
+            border-bottom: 1px solid rgba(243, 108, 33, 0.2); padding-bottom: 5px; flex-shrink: 0; display: flex; justify-content: space-between;
+        }
+
+        /* SIDEBAR */
+        .sidebar { overflow-y: auto; transition: width 0.3s; }
+        .ctrl-group { margin-bottom: 15px; }
+        .label { font-size: 11px; color: #aab; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .hud-input { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #445; color: #fff; padding: 8px; font-family: var(--font-ui); margin-bottom: 5px; }
+        .hud-btn { width: 100%; background: rgba(243, 108, 33, 0.1); border: 1px solid var(--pri); color: var(--pri); padding: 8px; cursor: pointer; font-weight: bold; }
+        .hud-btn:hover { background: var(--pri); color: #000; }
+        
+        .status { width: 8px; height: 8px; background: #333; transform: rotate(45deg); display: inline-block; }
+        .status.on { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .status.off { background: var(--danger); }
+
+        /* CONTENT */
+        .content-area { display: flex; flex-direction: column; gap: 15px; overflow: hidden; height: 100%; min-height: 0; }
+        
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; height: auto; min-height: 80px; flex-shrink: 0; }
+        .stat-box {
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-left: 3px solid var(--pri);
+            padding: 10px; display: flex; flex-direction: column; justify-content: center;
+        }
+        .stat-val { font-family: var(--font-data); font-size: 24px; font-weight: bold; color: #fff; }
+        .stat-label { font-size: 10px; color: #aaa; margin-bottom: 2px; }
+
+        .view-section { flex: 1; display: none; height: 100%; min-height: 0; position: relative; }
+        .view-section.active { display: flex; flex-direction: column; }
+        
+        /* LOG & TERMINAL */
+        .term-box {
+            flex-grow: 1; background: rgba(0,0,0,0.8); border: 1px solid #333; padding: 10px;
+            font-family: var(--font-data); font-size: 11px; overflow-y: auto; color: #fff;
+            display: flex; flex-direction: column-reverse;
+        }
+        .log { border-bottom: 1px solid #222; padding: 2px 0; }
+        .l-tx { color: var(--pri); } .l-rx { color: var(--success); } .l-err { color: var(--danger); }
+
+        /* MAP */
+        #map-view { width: 100%; height: 100%; background: #000; border-radius: 4px; }
+        .overlay-data { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 10px; border-left: 2px solid var(--pri); z-index: 500; pointer-events: none; border-radius: 0 4px 4px 0; }
+        .data-row { font-family: var(--font-data); font-size: 12px; color: var(--pri); margin: 2px 0; }
+
+        /* LIDAR & ISL */
+        .lidar-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; width: 100%; max-width: 800px; margin: 0 auto; overflow-y: auto; }
+        .big-stat { background: rgba(0,0,0,0.3); border: 1px solid #445; padding: 20px; text-align: center; }
+        .bs-val { font-size: 40px; font-weight: bold; font-family: var(--font-data); color: #fff; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+        ::-webkit-scrollbar-thumb { background: var(--sec); border-radius: 2px; }
+
+        /* --- RESPONSIVE MEDIA QUERIES --- */
+
+        /* TABLET & IPAD (Up to 1024px) */
+        @media screen and (max-width: 1024px) {
+            body { overflow-y: auto; height: auto; min-height: 100dvh; }
+            
+            /* บังคับ Grid เป็นแนวตั้งเมื่อจอแคบเกินไป */
+            .grid-container {
+                display: flex; flex-direction: column;
+                height: auto; overflow: visible;
+                padding-bottom: 40px;
+            }
+            .title-bar { flex-wrap: wrap; }
+            .nav-tabs { width: 100%; margin-top: 5px; } 
+            .app-logo { width: 100%; justify-content: center; }
+            .sys-info { display: none; } 
+            
+            .sidebar { 
+                width: 100%; flex-direction: row; flex-wrap: wrap; gap: 10px; 
+                max-height: 300px;
+                margin-bottom: 20px;
+            }
+            .ctrl-group { flex: 1; min-width: 200px; margin-bottom: 0; }
+            .view-section { min-height: 500px; }
+        }
+
+        /* MOBILE (Up to 768px) */
+        @media screen and (max-width: 768px) {
+            .nav-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+            .nav-btn { width: 100%; text-align: center; }
+            
+            .stats-row { grid-template-columns: 1fr 1fr; gap: 5px; }
+            .stat-val { font-size: 20px; }
+            
+            /* Log บนมือถือสูงแค่ 150px */
+            .term-box { max-height: 150px !important; border: 1px solid var(--pri); }
+            .log-panel { flex: none; height: auto; }
+            
+            .sidebar { flex-direction: column; max-height: none; order: 2; }
+            .content-area { order: 1; }
+            .view-section { min-height: 400px; }
+            .lidar-grid { grid-template-columns: 1fr; }
+        }
+        
+        /* LOGIN OVERLAY */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #020406; z-index: 9999;
+            display: flex; align-items: center; justify-content: center; flex-direction: column;
+        }
+        .login-box { text-align: center; padding: 20px; }
+        .login-input { padding: 10px; margin: 10px 0; width: 200px; text-align: center; }
+        .login-btn { padding: 10px 20px; cursor: pointer; border: 1px solid var(--pri); background: transparent; color: var(--pri); }
+        .login-error { color: var(--danger); font-size: 12px; margin-top: 10px; opacity: 0; }
+
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="login-box">
+            <div style="margin-bottom: 20px;"><img src="logo.png" style="width: 150px; opacity: 0.9;"></div>
+            <div style="color:#fff; font-family:var(--font-head); font-size:24px; margin-bottom:5px;">MISSION CONTROL</div>
+            <div style="color:var(--sec); font-size:10px; letter-spacing:2px; margin-bottom:20px;">SECURE ACCESS TERMINAL</div>
+            <input type="password" id="login-input" class="login-input" placeholder="PASSCODE" onkeypress="handleEnter(event)">
+            <br>
+            <button class="login-btn" onclick="checkLogin()">INITIALIZE</button>
+            <div id="login-msg" class="login-error">ACCESS DENIED</div>
+        </div>
+    </div>
+
+    <div id="main-interface" style="display: none; height: 100%; flex-direction: column;">
+        <div class="title-bar">
+           <div class="app-logo">
+                <img src="logo.png">
+           </div>
+            <div class="nav-tabs">
+                <button class="nav-btn active" onclick="switchMainView('dashboard', this)">LOGS</button>
+                <button class="nav-btn" onclick="switchMainView('map', this)">MAP</button>
+                <button class="nav-btn" onclick="switchMainView('isl', this)">LINK</button>
+                <button class="nav-btn" onclick="switchMainView('lidar', this)">LIDAR</button>
+            </div>
+            <div class="sys-info">UTC <span id="sys-clock">00:00:00</span></div>
+        </div>
+
+        <div class="grid-container" id="main-grid">
+            <aside class="sidebar hud-panel p-content">
+                <div class="hud-header"><span>SYSTEM CONTROL</span></div>
+                
+                <div class="ctrl-group">
+                    <div class="label"><span>GS LINK</span><div class="status off" id="gs-status-dot"></div></div>
+                    <select class="hud-input" id="gs-port-select"><option>LOADING...</option></select>
+                    <button class="hud-btn" onclick="connectSerial()">CONNECT</button>
+                </div>
+                
+                <div class="hud-header"><span>COMMAND</span></div>
+                <div class="ctrl-group">
+                    <input type="text" id="cmd-input" class="hud-input" placeholder="CMD..." onkeypress="handleCmdEnter(event)">
+                    <button class="hud-btn" id="btn-tx" onclick="transmitCommand()">SEND</button>
+                </div>
+
+                <div style="margin-top: auto; padding-top: 10px; font-size: 9px; color: #556;">
+                    TCE SAT MOBILE v3.2<br>STATUS: NOMINAL
+                </div>
+            </aside>
+
+            <main class="content-area">
+                <section class="stats-row">
+                    <div class="stat-box" style="border-left-color: var(--pri);">
+                        <div class="stat-label">BATT (V)</div><div class="stat-val" id="val-batt">--.--</div>
+                    </div>
+                    <div class="stat-box" style="border-left-color: var(--success);">
+                        <div class="stat-label">RSSI (dBm)</div><div class="stat-val" id="val-rssi">--</div>
+                    </div>
+                    <div class="stat-box" style="border-left-color: var(--warn);">
+                        <div class="stat-label">TEMP (°C)</div><div class="stat-val" id="val-temp">--.-</div>
+                    </div>
+                    <div class="stat-box" style="border-left-color: #fff;">
+                        <div class="stat-label">MET</div><div class="stat-val" id="val-time" style="font-size: 18px;">00:00:00</div>
+                    </div>
+                </section>
+
+                <section id="view-dashboard" class="view-section active">
+                    <div class="hud-panel log-panel p-content">
+                        <div class="hud-header">
+                            <span>MISSION LOG FEED</span>
+                            <button style="background:none; border:1px solid #556; color:#aaa; font-size:9px; cursor:pointer;" onclick="exportLogToPDF()">PDF</button>
+                        </div>
+                        <div class="term-box" id="dashboard-log">
+                            </div>
+                    </div>
+                </section>
+
+                <section id="view-map" class="view-section hud-panel">
+                    <div id="map-view"></div>
+                    <div class="overlay-data">
+                        <div class="data-row">LAT: <b id="d-lat">0.00</b></div>
+                        <div class="data-row">LON: <b id="d-lon">0.00</b></div>
+                        <div class="data-row">ALT: <b id="d-alt">0</b> km</div>
+                    </div>
+                </section>
+                
+                <section id="view-isl" class="view-section">
+                    <div class="hud-panel p-content">
+                         <div class="hud-header">INTER-SATELLITE LINK</div>
+                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div class="stat-box"><div class="stat-label">BANDWIDTH</div><div class="stat-val" id="isl-bw">---</div></div>
+                            <div class="stat-box"><div class="stat-label">LATENCY</div><div class="stat-val" id="isl-lat">---</div></div>
+                            <div class="stat-box"><div class="stat-label">LOSS</div><div class="stat-val" style="color:var(--success);">0%</div></div>
+                            <div class="stat-box"><div class="stat-label">SNR</div><div class="stat-val">-- dB</div></div>
+                         </div>
+                    </div>
+                </section>
+
+                <section id="view-lidar" class="view-section">
+                    <div class="lidar-grid">
+                        <div class="big-stat"><div class="stat-label">AZIMUTH</div><div class="bs-val" id="lid-dir">---</div></div>
+                        <div class="big-stat"><div class="stat-label">RANGE (m)</div><div class="bs-val" id="lid-dist">---</div></div>
+                        <div class="big-stat"><div class="stat-label">SPEED (m/s)</div><div class="bs-val" id="lid-spd">0.0</div></div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    
+    <script>
+        const socket = io(); 
+        const PASSCODE = "admin"; 
+
+        function checkLogin() {
+            if(document.getElementById('login-input').value === PASSCODE) {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('main-interface').style.display = 'flex';
+                if(lMap) lMap.invalidateSize();
+                log('SYS', 'System Authenticated.');
+                startMissionTimer();
+                socket.emit('list-ports');
+            } else {
+                document.getElementById('login-msg').style.opacity = '1';
+            }
+        }
+        function handleEnter(e) { if(e.key === 'Enter') checkLogin(); }
+
+        // Socket Listeners
+        socket.on('serial-data', processRawSerial);
+        socket.on('status', (msg) => { if(msg==='CONNECTED') document.getElementById('gs-status-dot').className = 'status on'; });
+        socket.on('ports-list', (ports) => {
+            const sel = document.getElementById('gs-port-select'); sel.innerHTML = '';
+            ports.forEach(p => { let opt = document.createElement('option'); opt.value = p.path; opt.innerText = p.path; sel.appendChild(opt); });
+            if(ports.length===0) sel.innerHTML = '<option>NO PORT</option>';
+        });
+
+        function connectSerial() {
+            let p = document.getElementById('gs-port-select').value;
+            if(p && p!=='NO PORT' && p!=='LOADING...') socket.emit('connect-serial', { path: p, baudRate: 115200 });
+        }
+        function transmitCommand() {
+            let cmd = document.getElementById('cmd-input').value.toUpperCase();
+            if(cmd) { socket.emit('write-serial', cmd+'\n'); log('TX', cmd); document.getElementById('cmd-input').value=''; }
+        }
+        function handleCmdEnter(e) { if(e.key === 'Enter') transmitCommand(); }
+
+        function processRawSerial(str) {
+            str = str.trim(); log('RX', str);
+            if(str.startsWith('#A')) { let p=str.split(','); updateMap(p[2], p[3]); }
+            if(str.startsWith('#G')) { let p=str.split(','); document.getElementById('val-batt').innerText = parseFloat(p[3]).toFixed(2); }
+            if(str.startsWith('#H')) { let p=str.split(','); document.getElementById('val-temp').innerText = parseFloat(p[2]).toFixed(1); document.getElementById('val-rssi').innerText = p[4]; }
+        }
+
+        // Utils
+        let missionStart = Date.now();
+        function startMissionTimer() {
+            setInterval(() => {
+                let d = Math.floor((Date.now() - missionStart)/1000);
+                let h = Math.floor(d/3600).toString().padStart(2,'0');
+                let m = Math.floor((d%3600)/60).toString().padStart(2,'0');
+                let s = (d%60).toString().padStart(2,'0');
+                document.getElementById('val-time').innerText = `${h}:${m}:${s}`;
+                
+                let now = new Date();
+                document.getElementById('sys-clock').innerText = now.toISOString().split('T')[1].split('.')[0];
+            }, 1000);
+        }
+
+        function switchMainView(id, btn) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('view-'+id).classList.add('active');
+            if(id==='map' && lMap) setTimeout(() => lMap.invalidateSize(), 300);
+        }
+
+        let globalLogs = [];
+        function log(type, msg) {
+            let ts = new Date().toLocaleTimeString('en-US',{hour12:false});
+            globalLogs.unshift([ts, type, msg]);
+            let div = document.createElement('div'); div.className = 'log';
+            let c = type==='TX'?'l-tx':(type==='RX'?'l-rx':'l-err');
+            div.innerHTML = `<span style="color:#667; margin-right:5px;">${ts}</span><span class="${c}" style="font-weight:bold; margin-right:5px;">${type}</span>${msg}`;
+            let box = document.getElementById('dashboard-log');
+            box.prepend(div);
+            if(box.childElementCount > 50) box.lastChild.remove();
+        }
+
+        function exportLogToPDF() {
+            if(!window.jspdf) return;
+            const doc = new window.jspdf.jsPDF();
+            doc.autoTable({ head:[['TIME','TYPE','MSG']], body: globalLogs });
+            doc.save('LOG.pdf');
+        }
+
+        var lMap, satMark;
+        document.addEventListener('DOMContentLoaded', () => {
+            lMap = L.map('map-view', {zoomControl:false}).setView([13.75, 100.50], 4);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(lMap);
+            satMark = L.circleMarker([0,0], {color:'#00f0ff', radius:5}).addTo(lMap);
+        });
+        function updateMap(lat, lon) {
+            if(!lMap) return;
+            let pos = [parseFloat(lat), parseFloat(lon)];
+            satMark.setLatLng(pos); lMap.panTo(pos);
+            document.getElementById('d-lat').innerText = parseFloat(lat).toFixed(4);
+            document.getElementById('d-lon').innerText = parseFloat(lon).toFixed(4);
+        }
+    </script>
+</body>
+</html>

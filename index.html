@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title> X-1 | MISSION CONTROL</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@500;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/smoothie/1.34.0/smoothie.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    
+    <style>
+        :root {
+            --bg-core: #050a10; --bg-panel: rgba(10, 20, 30, 0.9);
+            --pri: #f36c21; --pri-cyan: #00f0ff; --sec: #0099ff; 
+            --warn: #ffcc00; --danger: #ff003c; --success: #00ff9d; 
+            --glass-border: 1px solid rgba(243, 108, 33, 0.3);
+            --hud-glow: 0 0 10px rgba(243, 108, 33, 0.4);
+            --font-head: 'Orbitron', sans-serif;
+            --font-ui: 'Rajdhani', sans-serif; 
+            --font-data: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+        
+        body { margin: 0; padding: 0; background-color: var(--bg-core); color: var(--pri); font-family: var(--font-ui); height: 100vh; width: 100vw; overflow: hidden; background-image: radial-gradient(circle at 50% 50%, rgba(243, 108, 33, 0.1) 0%, transparent 70%), linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.85) 0%, transparent 1px); background-size: 100% 100%, 40px 40px, 40px 40px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); } ::-webkit-scrollbar-thumb { background: var(--sec); border-radius: 3px; }
+
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #020406; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; transition: opacity 0.5s ease; overflow: hidden; }
+        .login-bg-grid { position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background-image: linear-gradient(rgba(243, 108, 33, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(243, 108, 33, 0.1) 1px, transparent 1px); background-size: 50px 50px; transform: perspective(500px) rotateX(60deg) translateY(0); animation: gridMove 10s linear infinite; opacity: 0.3; pointer-events: none; }
+        @keyframes gridMove { 0% { transform: perspective(500px) rotateX(60deg) translateY(0); } 100% { transform: perspective(500px) rotateX(60deg) translateY(50px); } }
+        .login-box { width: 100vw; height: 100vh; padding: 0; background: rgba(5, 10, 16, 0.95); backdrop-filter: blur(10px); border: none; box-shadow: inset 0 0 150px rgba(0,0,0,1); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; position: fixed; top: 0; left: 0; z-index: 9999; opacity: 0; animation: fadeIn 1s forwards; }
+        @keyframes fadeIn { to { opacity: 1; } }
+        .login-title { font-family: var(--font-head); font-size: 28px; color: #fff; margin-bottom: 5px; letter-spacing: 4px; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .login-sub { font-family: var(--font-data); font-size: 11px; color: var(--sec); margin-bottom: 35px; letter-spacing: 2px; text-transform: uppercase; }
+        .input-group { position: relative; width: 100%; max-width: 420px; margin-bottom: 25px; }
+        .login-input { width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid #334; color: #fff; padding: 15px; font-family: var(--font-data); font-size: 18px; text-align: center; outline: none; transition: 0.3s; letter-spacing: 3px; }
+        .login-input:focus { border-color: var(--pri); box-shadow: 0 0 20px rgba(243, 108, 33, 0.15); background: rgba(243, 108, 33, 0.05); }
+        .login-btn { width: 100%; max-width: 420px; background: transparent; color: var(--pri); border: 1px solid var(--pri); padding: 15px; font-family: var(--font-head); font-weight: 700; font-size: 14px; cursor: pointer; letter-spacing: 2px; transition: 0.2s; text-transform: uppercase; }
+        .login-btn:hover { background: rgba(243, 108, 33, 0.1); box-shadow: 0 0 25px rgba(243, 108, 33, 0.3); text-shadow: 0 0 8px var(--pri); }
+        .login-error { color: var(--danger); font-family: var(--font-data); font-size: 12px; margin-top: 20px; height: 15px; opacity: 0; transition: opacity 0.3s; text-shadow: 0 0 10px var(--danger); letter-spacing: 1px; background: rgba(255,0,0,0.1); display: inline-block; padding: 2px 10px; }
+
+        .title-bar { height: 60px; background: linear-gradient(90deg, rgba(10,15,20,0.98), rgba(10,15,20,0.9)); border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; padding: 0 25px; z-index: 2000; position: relative; flex-shrink: 0; }
+        .app-logo { font-family: var(--font-head); font-size: 22px; color: var(--pri); letter-spacing: 2px; display: flex; align-items: center; gap: 12px; text-shadow: var(--hud-glow); }
+        .nav-tabs { display: flex; gap: 8px; }
+        .nav-btn { background: transparent; border: 1px solid rgba(243, 108, 33, 0.3); color: rgba(255,255,255,0.7); padding: 8px 20px; font-family: var(--font-ui); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%); }
+        .nav-btn:hover { color: var(--pri); border-color: var(--pri); background: rgba(243, 108, 33, 0.1); }
+        .nav-btn.active { background: var(--pri); color: #000; font-weight: 700; border-color: var(--pri); box-shadow: 0 0 15px rgba(243, 108, 33, 0.4); }
+        .sys-info { font-family: var(--font-data); font-size: 12px; color: var(--pri); background: rgba(243, 108, 33, 0.1); padding: 8px 20px; border-left: 2px solid var(--pri); margin-right: 140px; }
+
+        .grid-container { display: grid; grid-template-columns: 290px 1fr; grid-template-rows: 1fr; gap: 15px; padding: 15px; height: calc(100vh - 60px); overflow: hidden; transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .grid-container.full-mode { grid-template-columns: 0px 1fr; gap: 0; }
+        .grid-container.full-mode .sidebar { opacity: 0; padding: 0; pointer-events: none; }
+        .grid-container.full-mode .content-area { padding-left: 15px; }
+
+        .hud-panel { background: var(--bg-panel); border: var(--glass-border); position: relative; backdrop-filter: blur(10px); border-radius: 4px; clip-path: polygon(0 15px, 15px 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px)); display: flex; flex-direction: column; }
+        .p-content { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .hud-header { font-family: var(--font-head); font-size: 12px; letter-spacing: 1px; font-weight: 600; color: var(--pri); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(243, 108, 33, 0.2); padding-bottom: 8px; flex-shrink: 0; }
+
+        .sidebar { display: flex; flex-direction: column; gap: 15px; overflow-y: auto; width: 100%; transition: opacity 0.3s; }
+        .ctrl-group { margin-bottom: 5px; }
+        .label { font-size: 12px; color: #aab; margin-bottom: 5px; display: flex; justify-content: space-between; font-family: var(--font-ui); }
+        .hud-input { width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: var(--font-ui); font-size: 14px; padding: 8px 10px; outline: none; transition: 0.3s; margin-bottom: 5px; }
+        .hud-input:focus { border-color: var(--pri); box-shadow: 0 0 10px rgba(243, 108, 33, 0.2); }
+        .hud-btn { width: 100%; background: linear-gradient(90deg, rgba(243, 108, 33, 0.15), transparent); border: 1px solid var(--pri); color: var(--pri); font-family: var(--font-ui); font-weight: 600; font-size: 12px; padding: 10px; margin-top: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; }
+        .hud-btn:hover { background: var(--pri); color: #000; box-shadow: 0 0 20px var(--pri); }
+        .hud-btn-small { background: rgba(243, 108, 33, 0.1); border: 1px solid var(--pri); color: var(--pri); font-family: var(--font-ui); font-size: 10px; font-weight: 700; padding: 4px 12px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; clip-path: polygon(5px 0, 100% 0, 100% 100%, 0 100%, 0 5px); }
+        .hud-btn-small:hover { background: var(--pri); color: #000; box-shadow: 0 0 10px var(--pri); }
+        .status { width: 8px; height: 8px; background: #333; box-shadow: 0 0 0 2px rgba(255,255,255,0.1); transform: rotate(45deg); }
+        .status.on { background: var(--success); box-shadow: 0 0 10px var(--success); }
+        .status.off { background: var(--danger); box-shadow: 0 0 10px var(--danger); }
+        .status.idle { background: var(--warn); box-shadow: 0 0 10px var(--warn); }
+
+        .content-area { display: flex; flex-direction: column; gap: 15px; overflow: hidden; height: 100%; min-height: 0; }
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; height: 90px; flex-shrink: 0; }
+        .stat-box { background: linear-gradient(160deg, rgba(255,255,255,0.03), transparent); border: 1px solid rgba(255,255,255,0.1); border-left: 3px solid var(--pri); border-radius: 4px; padding: 10px 15px; display: flex; flex-direction: column; justify-content: center; }
+        .stat-label { font-size: 11px; color: #aab; font-family: var(--font-head); margin-bottom: 2px; letter-spacing: 1px; }
+        .stat-val { font-family: var(--font-data); font-size: 28px; font-weight: 700; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .stat-unit { font-size: 14px; color: var(--pri); margin-left: 5px; font-family: var(--font-ui); }
+
+        .view-section { flex: 1; display: none; flex-direction: column; min-height: 0; opacity: 0; transition: opacity 0.3s ease-in-out; height: 100%; }
+        .view-section.active { display: flex; opacity: 1; }
+        
+        .telemetry-chart-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); padding: 8px; border-radius: 4px; position: relative; display: flex; flex-direction: column; flex: 1; min-width: 0; }
+        .chart-title { font-family: var(--font-head); font-size: 10px; color: #aaa; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; letter-spacing: 1px; }
+        
+        .telemetry-badge-container { display: flex; gap: 8px; flex-shrink: 0; margin-top: 5px; width: 100%; }
+        .telemetry-badge { flex: 1; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-data); font-size: 14px; }
+        .telemetry-badge span { font-family: var(--font-head); font-size: 10px; color: #889; letter-spacing: 1px; text-transform: uppercase; }
+
+        .power-card { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 12px; display: flex; flex-direction: column; border-radius: 4px; flex-shrink: 0; margin-bottom: 10px;}
+        .power-title { font-family: var(--font-head); font-size: 11px; color: #aaa; margin-bottom: 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px; }
+        .batt-container { width: 100%; height: 25px; background: #111; border: 1px solid #444; border-radius: 2px; position: relative; margin-bottom: 5px; overflow: hidden; }
+        .batt-fill { height: 100%; background: linear-gradient(90deg, var(--pri), var(--warn)); width: 0%; transition: width 0.5s ease-in-out; box-shadow: 0 0 15px var(--pri); }
+        .batt-grid { position: absolute; top:0; left:0; width: 100%; height: 100%; background-image: linear-gradient(90deg, transparent 95%, #000 95%); background-size: 10% 100%; opacity: 0.3; }
+        .batt-text { font-family: var(--font-data); font-size: 24px; color: #fff; font-weight: bold; text-align: right; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .status-badge { text-align: center; padding: 10px; font-family: var(--font-head); font-weight: bold; font-size: 14px; border-radius: 4px; transition: all 0.3s; margin-top: 5px; letter-spacing: 1px; }
+        .status-badge.charging { background: rgba(0, 255, 157, 0.1); border: 1px solid var(--success); color: var(--success); box-shadow: 0 0 15px rgba(0,255,157,0.2); }
+        .status-badge.draining { background: rgba(255, 0, 60, 0.1); border: 1px solid var(--danger); color: var(--danger); box-shadow: 0 0 15px rgba(255,0,60,0.2); }
+
+        .debug-panel { position: fixed; top: 60px; right: -420px; width: 420px; height: calc(100vh - 60px); background: rgba(5, 10, 16, 0.98); border-left: 1px solid var(--pri); box-shadow: -10px 0 30px rgba(0,0,0,0.9); z-index: 3000; transition: right 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; backdrop-filter: blur(10px); }
+        .debug-panel.open { right: 0; }
+        .debug-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid rgba(243, 108, 33, 0.3); font-family: var(--font-head); color: var(--pri); font-size: 12px; letter-spacing: 1px; }
+        .close-debug-btn { background: transparent; border: none; color: var(--danger); font-size: 16px; cursor: pointer; font-family: var(--font-data); font-weight: bold; transition: 0.2s; }
+        .close-debug-btn:hover { text-shadow: 0 0 10px var(--danger); transform: scale(1.2); }
+        .btn-show-log { position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); border: 1px solid var(--pri); color: var(--pri); padding: 10px 20px; font-family: var(--font-head); font-size: 12px; font-weight: bold; cursor: pointer; z-index: 2500; transition: 0.2s; backdrop-filter: blur(5px); letter-spacing: 1px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .btn-show-log:hover { background: var(--pri); color: #000; box-shadow: 0 0 20px rgba(243, 108, 33, 0.5); }
+        .term-box { background: rgba(0,0,0,0.6); padding: 10px; font-family: var(--font-data); overflow-y: auto; display: flex; flex-direction: column-reverse; color: #ffffff; border-radius: 4px; }
+        .log { margin-bottom: 3px; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 2px; }
+        .l-sys { color: var(--warn); } .l-tx { color: var(--pri); } .l-rx { color: var(--success); } .l-err { color: var(--danger); font-weight: bold; background: rgba(255,0,0,0.1); }
+
+        #map-view { width: 100%; height: 100%; position: absolute; top:0; left:0; }
+        .leaflet-container { background: #050a10; } .leaflet-tile-pane { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+        .overlay-data { position: absolute; bottom: 15px; left: 15px; z-index: 500; background: rgba(0,0,0,0.8); border-left: 3px solid var(--pri); padding: 10px 15px; backdrop-filter: blur(5px); pointer-events: none; }
+        .data-row { font-family: var(--font-data); font-size: 14px; color: var(--pri); margin: 3px 0; } .data-row b { color: #fff; }
+
+        #view-isl { display: none; flex-direction: row; gap: 15px; } #view-isl.active { display: flex; }
+        .isl-col-right { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+        
+        #view-lidar { display: none; align-items: center; justify-content: center; } #view-lidar.active { display: flex; }
+        .radar-layout { display: flex; width: 100%; height: 100%; max-width: 1200px; gap: 30px; align-items: center; justify-content: center; padding: 20px; }
+        .radar-scope-container { position: relative; width: 500px; height: 500px; background: radial-gradient(circle, rgba(0,255,157,0.05) 0%, rgba(0,0,0,0.8) 70%); border-radius: 50%; border: 2px solid rgba(243, 108, 33, 0.4); box-shadow: 0 0 40px rgba(0,0,0,0.8), inset 0 0 30px rgba(0,255,157,0.1); flex-shrink: 0; }
+        .radar-scope-container canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; }
+        .radar-data-panel { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 500px; }
+        .big-stat-box { background: rgba(10, 20, 30, 0.6); border: 1px solid rgba(243, 108, 33, 0.2); border-radius: 4px; padding: 25px 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.3s; text-align: center; }
+        .bs-label { font-size: 13px; color: #889; letter-spacing: 2px; margin-bottom: 5px; font-family: var(--font-head); }
+        .bs-val { font-size: 42px; font-weight: 700; color: #fff; font-family: var(--font-data); text-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        .bs-unit { font-size: 14px; color: var(--pri); font-weight: 500; margin-top: 5px; }
+
+        .isl-lidar-grid { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 16px; height: 100%; min-height: 0; }
+        
+        .isl-column { display: flex; flex-direction: column; gap: 16px; height: 100%; }
+        
+        .isl-section-header { font-family: var(--font-head); font-size: 14px; color: var(--pri); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        
+        .isl-data-grid { display: grid; grid-template-columns: 1fr; gap: 8px; flex: 1; overflow-y: auto; }
+        
+        .data-cell { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); padding: 16px; display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; }
+        
+        .data-label { font-family: var(--font-head); font-size: 11px; color: #94A3B8; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+        
+        .data-content { display: flex; align-items: baseline; gap: 8px; }
+        
+        .data-value { font-family: var(--font-data); font-size: 24px; font-weight: 700; color: #E2E8F0; font-variant-numeric: tabular-nums; }
+        
+        .data-unit { font-family: var(--font-ui); font-size: 12px; color: #94A3B8; letter-spacing: 0.5px; text-transform: uppercase; }
+        
+        .threat-indicator.clear { background: rgba(16, 185, 129, 0.2); color: #10B981; border: 1px solid #10B981; padding: 4px 8px; border-radius: 2px; }
+        
+        .threat-indicator.critical { background: rgba(239, 68, 68, 0.2); color: #EF4444; border: 1px solid #EF4444; padding: 4px 8px; border-radius: 2px; }
+        
+        .lidar-cell { background: #111; border: 1px solid rgba(255,255,255,0.1); padding: 16px; display: flex; align-items: center; justify-content: center; position: relative; flex: 1; min-height: 400px; }
+        
+        #lidar-canvas { border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="login-bg-grid"></div>
+        <div class="login-box">
+            <div class="login-icon"><img src="logo.png" style="width: 400px; height: auto; margin-bottom: 15px;" alt="TCE SAT LOGO"></div>
+            <div class="login-title">X-1 COMMAND INTERFACE</div>
+            <div class="login-sub">EXPERIMENTAL PROTOTYPE | MISSION CONTROL</div>
+            <div class="input-group"><input type="password" id="login-input" class="login-input" placeholder="ENTER ACCESS CODE" onkeypress="handleEnter(event)"></div>
+            <button class="login-btn" onclick="checkLogin()">INITIALIZE LINK</button>
+            <div id="login-msg" class="login-error">ACCESS DENIED : INVALID CREDENTIALS</div>
+        </div>
+    </div>
+
+    <div id="main-interface" style="display: none; height: 100vh; flex-direction: column;">
+        <div class="title-bar">
+           <div class="app-logo">
+                <img src="logo.png" style="height: 45px; width: auto; object-fit: contain; filter: drop-shadow(0 0 5px var(--pri));" alt="LOGO">
+                <span style="font-family: var(--font-head); font-size: 18px; color: var(--pri); margin-left: 12px;">HELIOS X-1</span>
+            </div>
+            <div class="nav-tabs">
+                <button class="nav-btn active" onclick="switchMainView('dashboard', this)">DASHBOARD</button>
+                <button class="nav-btn" onclick="switchMainView('map', this)">ORBIT MAP</button>
+                <button class="nav-btn" onclick="switchMainView('isl', this)">INTERSAT & LIDAR</button>
+            </div>
+            <div class="sys-info">UTC TIME <span id="sys-clock" style="font-weight: bold; margin-left: 5px;">00:00:00</span></div>
+        </div>
+
+        <div class="grid-container" id="main-grid">
+            
+            <aside class="sidebar hud-panel p-content">
+                <div class="hud-header"><span>SYSTEM CONTROL</span></div>
+                <div class="ctrl-group">
+                    <div class="label"><span>GROUND STATION (GS)</span><div class="status off" id="gs-status-dot"></div></div>
+                    <select class="hud-input" id="gs-port-select"><option value="" disabled selected>-- SELECT PORT --</option></select>
+                    <select class="hud-input" id="gs-baud-select">
+                    <option value="9600">9600 BAUD</option>
+                    <option value="115200" selected>115200 BAUD</option></select>
+                    <button class="hud-btn" id="btn-gs" onclick="connectSerial()">CONNECT</button>
+                </div>
+                <div class="hud-header" style="margin-top: 10px;"><span>COMMAND UPLINK</span></div>
+                <div class="ctrl-group">
+                    <input type="text" id="cmd-input" class="hud-input" placeholder="> Enter command..." onkeypress="handleCmdEnter(event)">
+                    <button class="hud-btn" id="btn-tx" style="border-color: var(--warn); color: var(--warn);" onclick="transmitCommand()">TRANSMIT</button>
+                </div>
+
+                <div class="hud-header" style="margin-top: 10px;"><span>POWER SYSTEM</span></div>
+                <div class="power-card">
+                    <div class="power-title">SOLAR ARRAY STATUS</div>
+                    <div id="solar-status" class="status-badge draining">DISCHARGING</div>
+                </div>
+                <div class="power-card">
+                    <div class="power-title">BATTERY CAPACITY</div>
+                    <div class="batt-container"><div class="batt-grid"></div><div id="batt-fill" class="batt-fill" style="width: 0%;"></div></div>
+                    <div id="batt-pct-text" class="batt-text">0%</div>
+                </div>
+
+                <div style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; text-align: center; font-size: 9px; opacity: 0.5;">
+                    HELIOS X-1 V3.0<br>COPYRIGHT 2026
+                </div>
+            </aside>
+
+            <main class="content-area">
+                <section class="stats-row">
+                    <div class="stat-box" style="border-left-color: var(--pri);"><div class="stat-label">BATTERY VOLTAGE</div><div><span class="stat-val" id="val-batt">--.--</span><span class="stat-unit">V</span></div></div>
+                    <div class="stat-box" style="border-left-color: var(--success);"><div class="stat-label">SIGNAL RSSI</div><div><span class="stat-val" id="val-rssi">--</span><span class="stat-unit">dBm</span></div></div>
+                    <div class="stat-box" style="border-left-color: var(--warn);"><div class="stat-label">INTERNAL TEMP</div><div><span class="stat-val" id="val-temp">--.-</span><span class="stat-unit">°C</span></div></div>
+                    <div class="stat-box" style="border-left-color: #fff;"><div class="stat-label">MISSION TIME (MET)</div><div><span class="stat-val" id="val-time" style="font-size: 24px;">T+00:00:00</span></div></div>
+                </section>
+
+                <section id="view-dashboard" class="view-section active">
+                    <div class="hud-panel p-content" style="padding: 15px;">
+                        <div class="hud-header">
+                            <div style="display:flex; align-items:center; gap:10px;"><span>TELEMETRY DASHBOARD</span><div class="status on" style="width:6px; height:6px;"></div></div>
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; height: 100%; gap: 10px;">
+                            <div style="display: flex; gap: 15px; flex: 1; min-height: 0;">
+                                
+                                <div class="telemetry-chart-box" style="flex: 0 0 300px; display: flex; flex-direction: column; overflow: hidden;">
+                                    <div class="chart-title"><span>3D ATTITUDE</span></div>
+                                    <div id="3d-attitude-container" style="flex: 1; width: 100%; position: relative; background: radial-gradient(circle, rgba(243, 108, 33, 0.05) 0%, transparent 70%); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                        <span id="3d-loading-text" style="color: var(--warn); font-size: 10px; text-align: center; font-family: var(--font-data); z-index: 10;">
+                                            LOADING CUBESAT.GLB...
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div style="flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; min-width: 0;">
+                                    <div class="telemetry-chart-box"><div class="chart-title"><span>ROLL (deg)</span><span id="txt-roll" style="color:var(--pri)">0.0</span></div><canvas id="cv-roll" style="width:100%; height:100%; min-height:40px;"></canvas></div>
+                                    <div class="telemetry-chart-box"><div class="chart-title"><span>PITCH (deg)</span><span id="txt-pitch" style="color:var(--pri)">0.0</span></div><canvas id="cv-pitch" style="width:100%; height:100%; min-height:40px;"></canvas></div>
+                                    <div class="telemetry-chart-box"><div class="chart-title"><span>YAW (deg)</span><span id="txt-yaw" style="color:var(--pri)">0.0</span></div><canvas id="cv-yaw" style="width:100%; height:100%; min-height:40px;"></canvas></div>
+                                    
+                                    <div class="telemetry-chart-box"><div class="chart-title"><span>ALTITUDE (km)</span><span id="txt-alt" style="color:var(--sec)">0.0</span></div><canvas id="cv-alt" style="width:100%; height:100%; min-height:40px;"></canvas></div>
+                                    <div class="telemetry-chart-box"><div class="chart-title"><span>TARGET DIST (m)</span><span id="txt-dist" style="color:var(--danger)">0</span></div><canvas id="cv-dist" style="width:100%; height:100%; min-height:40px;"></canvas></div>
+                                    <div class="telemetry-chart-box"><div class="chart-title"><span>REL SPEED (m/s)</span><span id="txt-spd" style="color:var(--warn)">0.0</span></div><canvas id="cv-spd" style="width:100%; height:100%; min-height:40px;"></canvas></div>
+                                </div>
+                            </div>
+                            
+                            <div class="telemetry-badge-container">
+                                <div class="telemetry-badge"><span>GPS SATS</span><b id="val-sats" style="color:var(--pri-cyan)">0</b></div>
+                                <div class="telemetry-badge"><span>PRESSURE</span><b id="val-press" style="color:#fff">0.00 <small style="font-size:10px; color:#667;">hPa</small></b></div>
+                                <div class="telemetry-badge"><span>HUMIDITY</span><b id="val-humid" style="color:var(--success)">0.0 <small style="font-size:10px; color:#667;">%</small></b></div>
+                                <div class="telemetry-badge"><span>CO2 LEVEL</span><b id="val-co2" style="color:var(--warn)">0 <small style="font-size:10px; color:#667;">PPM</small></b></div>
+                            </div>
+                            
+                            <div class="hud-panel p-content" style="flex: 0 0 120px; display: flex; flex-direction: column; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1);">
+                                <div class="hud-header">
+                                    <div style="display:flex; align-items:center; gap:10px;"><span>MISSION LOG</span><div class="status on" style="width:6px; height:6px;"></div></div>
+                                    <button class="hud-btn-small" onclick="exportLogToPDF()">EXPORT DATA</button>
+                                </div>
+                                <div class="term-box" id="dashboard-log" style="flex: 1; font-size: 11px; min-height: 0;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="view-map" class="view-section hud-panel">
+                    <div id="map-view"></div>
+                    <div class="overlay-data" style="top: 15px; left: 15px; bottom: auto;">
+                        <div class="data-row">LAT: <b id="d-lat">0.0000</b></div>
+                        <div class="data-row">LON: <b id="d-lon">0.0000</b></div>
+                        <div class="data-row">ALT: <b id="d-alt">0</b> km</div>
+                        <div class="data-row">VEL: <b id="d-vel">0.00</b> km/s</div>
+                    </div>
+                </section>
+
+                <section id="view-isl" class="view-section">
+                    <div class="hud-panel p-content">
+                        <div class="hud-header"><span>INTERSAT & LIDAR</span></div>
+                        <div class="isl-lidar-grid">
+                            <div class="isl-column">
+                                <div class="isl-section-header">INTERSAT LINK</div>
+                                <div class="isl-data-grid">
+                                    <div class="data-cell"><div class="data-label">BANDWIDTH</div><div class="data-content"><span class="data-value" id="isl-bw">---</span><span class="data-unit">Mbps</span></div></div>
+                                    <div class="data-cell"><div class="data-label">LATENCY</div><div class="data-content"><span class="data-value" id="isl-lat">---</span><span class="data-unit">ms</span></div></div>
+                                    <div class="data-cell"><div class="data-label">PACKET LOSS</div><div class="data-content"><span class="data-value" id="isl-loss">0%</span><span class="data-unit">STABLE</span></div></div>
+                                    <div class="data-cell"><div class="data-label">MODULATION</div><div class="data-content"><span class="data-value">QPSK</span><span class="data-unit">ADAPTIVE</span></div></div>
+                                    <div class="data-cell"><div class="data-label">SNR</div><div class="data-content"><span class="data-value" id="isl-snr">--</span><span class="data-unit">dB</span></div></div>
+                                </div>
+                            </div>
+                            <div class="isl-column">
+                                <div class="isl-section-header">LIDAR PLOT</div>
+                                <div class="lidar-cell"><canvas id="lidar-canvas" width="400" height="400"></canvas></div>
+                            </div>
+                            <div class="isl-column">
+                                <div class="isl-section-header">TARGET PARAMETERS</div>
+                                <div class="isl-data-grid">
+                                    <div class="data-cell"><div class="data-label">TARGET ID</div><div class="data-content"><span class="data-value" id="lid-target-id">SAT-02</span><span class="data-unit">OBJECT</span></div></div>
+                                    <div class="data-cell"><div class="data-label">RANGE TO TARGET</div><div class="data-content"><span class="data-value" id="lid-dist">---</span><span class="data-unit">meters</span></div></div>
+                                    <div class="data-cell"><div class="data-label">RELATIVE SPEED</div><div class="data-content"><span class="data-value" id="lid-spd">0.0</span><span class="data-unit">m/s</span></div></div>
+                                    <div class="data-cell"><div class="data-label">OBJECT AZIMUTH</div><div class="data-content"><span class="data-value" id="lid-dir">---</span><span class="data-unit">degrees</span></div></div>
+                                    <div class="data-cell"><div class="data-label">STATUS</div><div class="data-content"><span class="data-value threat-indicator" id="lid-status">CLEAR</span><span class="data-unit">THREAT</span></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const socket = io(); const PASSCODE = "admin"; 
+        
+        const tsRoll = new TimeSeries(), tsPitch = new TimeSeries(), tsYaw = new TimeSeries();
+        const tsAlt = new TimeSeries(), tsDist = new TimeSeries(), tsSpd = new TimeSeries();
+
+        function verifyChecksum(rawData) {
+            if (!rawData || !rawData.includes('*')) return null;
+            return rawData.split('*')[0]; 
+        }
+
+        function initTelemetryChart(canvasId, tsObj, colorCode, minV, maxV) {
+            let chart = new SmoothieChart({ millisPerPixel: 50, grid: { fillStyle: 'transparent', strokeStyle: 'rgba(255,255,255,0.05)', verticalSections: 4, borderVisible: false }, labels: { fillStyle: '#888', precision: 1, fontSize: 9, fontFamily: 'JetBrains Mono' }, maxValue: maxV, minValue: minV, responsive: true });
+            chart.addTimeSeries(tsObj, { lineWidth: 1.5, strokeStyle: colorCode, fillStyle: colorCode + '1A' });
+            chart.streamTo(document.getElementById(canvasId), 1000);
+        }
+
+        function initLidarGrid() {
+            const canvas = document.getElementById('lidar-canvas');
+            if(!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(centerX, centerY) - 20;
+            
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.2)';
+            ctx.lineWidth = 1;
+            for(let i = 1; i <= 4; i++) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, (radius / 4) * i, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX - radius, centerY);
+            ctx.lineTo(centerX + radius, centerY);
+            ctx.moveTo(centerX, centerY - radius);
+            ctx.lineTo(centerX, centerY + radius);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#667';
+            ctx.font = '10px JetBrains Mono';
+            ctx.textAlign = 'center';
+            ctx.fillText('1000m', centerX, centerY - radius + 15);
+            ctx.fillText('2000m', centerX, centerY - (radius/2) + 15);
+            ctx.fillText('3000m', centerX, centerY + 15);
+            ctx.fillText('4000m', centerX, centerY + (radius/2) + 15);
+            ctx.fillText('5000m', centerX, centerY + radius + 15);
+            
+            ctx.fillText('0°', centerX + radius + 15, centerY + 3);
+            ctx.fillText('90°', centerX - 3, centerY - radius - 5);
+            ctx.fillText('180°', centerX - radius - 25, centerY + 3);
+            ctx.fillText('270°', centerX - 3, centerY + radius + 15);
+        }
+
+        function addLidarBlip(range, azimuth) {
+            const canvas = document.getElementById('lidar-canvas');
+            if(!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const maxRadius = Math.min(centerX, centerY) - 20;
+            
+            const angleRad = (azimuth - 90) * (Math.PI / 180);
+            const distance = (range / 5000) * maxRadius;
+            const x = centerX + (distance * Math.cos(angleRad));
+            const y = centerY + (distance * Math.sin(angleRad));
+            
+            ctx.fillStyle = 'rgba(0, 240, 255, 0.8)';
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(0, 240, 255, 0.5)';
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTelemetryChart('cv-roll', tsRoll, '#f36c21', -90, 90);
+            initTelemetryChart('cv-pitch', tsPitch, '#f36c21', -90, 90);
+            initTelemetryChart('cv-yaw', tsYaw, '#f36c21', 0, 360);
+            initTelemetryChart('cv-alt', tsAlt, '#0099ff', 380, 420);
+            initTelemetryChart('cv-dist', tsDist, '#ff003c', 0, 6000);
+            initTelemetryChart('cv-spd', tsSpd, '#ffcc00', 0, 600);
+            initLidarGrid();
+            init3DModel();
+        });
+
+        function checkLogin() {
+            if(document.getElementById('login-input').value === PASSCODE) {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('main-interface').style.display = 'flex';
+                if(lMap) lMap.invalidateSize();
+                log('SYS', 'User Authenticated.');
+                startMissionTimer();
+                socket.emit('list-ports');
+                if(renderer && camera) {
+                    const cont = document.getElementById('3d-attitude-container');
+                    camera.aspect = cont.clientWidth / cont.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(cont.clientWidth, cont.clientHeight);
+                }
+            } else { document.getElementById('login-msg').style.opacity = '1'; }
+        }
+        function handleEnter(e) { if(e.key === 'Enter') checkLogin(); }
+
+        socket.on('serial-data', processRawSerial);
+        socket.on('ports-list', (ports) => {
+            const sel = document.getElementById('gs-port-select'); sel.innerHTML = '<option value="" disabled selected>-- SELECT PORT --</option>';
+            ports.forEach(p => { let opt = document.createElement('option'); opt.value = p.path; opt.innerText = p.path; sel.appendChild(opt); });
+        });
+        socket.on('status', (msg) => { if(msg==='CONNECTED') document.getElementById('gs-status-dot').className = 'status on'; });
+
+        function connectSerial() { let p = document.getElementById('gs-port-select').value; let b = document.getElementById('gs-baud-select').value; if(p) socket.emit('connect-serial', { path: p, baudRate: parseInt(b) }); }
+        function transmitCommand() {
+            let cmd = document.getElementById('cmd-input').value.toUpperCase();
+            if(cmd) { socket.emit('write-serial', cmd+'\n'); log('TX', cmd); document.getElementById('cmd-input').value=''; }
+        }
+        function handleCmdEnter(e) { if(e.key === 'Enter') transmitCommand(); }
+
+        function processRawSerial(str) {
+            str = str.trim(); 
+            
+            const validPayload = verifyChecksum(str);
+            if (!validPayload) {
+                log('ERR', 'DROP (INVALID FORMAT): ' + str);
+                return; 
+            }
+
+            log('RX', validPayload + '*OK'); 
+            let now = new Date().getTime(); 
+
+            if (validPayload.startsWith("#A")) { 
+                let p = validPayload.split(','); 
+                if (p.length >= 4) updateMap(p[2], p[3]); 
+            } 
+            else if (validPayload.startsWith("#B")) { 
+                let p = validPayload.split(',');
+                if (p.length >= 6) {
+                    let alt = parseFloat(p[2]); tsAlt.append(now, alt); 
+                    document.getElementById('txt-alt').innerText = alt.toFixed(1);
+                    document.getElementById('d-alt').innerText = alt.toFixed(1);
+                    document.getElementById('val-sats').innerText = parseInt(p[3]) || 0;
+                    let spd = parseFloat(p[4]); tsSpd.append(now, spd);
+                    document.getElementById('txt-spd').innerText = spd.toFixed(1);
+                    document.getElementById('d-vel').innerText = spd.toFixed(2);
+                }
+            }
+            else if (validPayload.startsWith("#C")) { 
+                let p = validPayload.split(',');
+                if (p.length >= 5) {
+                    document.getElementById('val-temp').innerText = parseFloat(p[2]).toFixed(1);
+                    document.getElementById('val-humid').innerHTML = `${parseFloat(p[4]).toFixed(1)} <small style="font-size:10px; color:#667;">%</small>`;
+                }
+            }
+            else if (validPayload.startsWith("#G")) { 
+                let p = validPayload.split(',');
+                if (p.length >= 8) {
+                    let volt = parseFloat(p[6]);
+                    let pct = parseFloat(p[7]);
+                    document.getElementById('val-batt').innerText = volt.toFixed(2);
+                    
+                    let battFill = document.getElementById('batt-fill');
+                    let battText = document.getElementById('batt-pct-text');
+                    battFill.style.width = pct + '%'; 
+                    battText.innerText = pct.toFixed(1) + '%';
+                    battFill.style.background = (pct < 20) ? 'var(--danger)' : 'linear-gradient(90deg, var(--pri), var(--warn))';
+                }
+            }
+            else if (validPayload.startsWith("#H")) {
+                let p = validPayload.split(',');
+                if (p.length >= 5) {
+                    let sol1V = parseFloat(p[2]);
+                    let sol2V = parseFloat(p[3]);
+                    let solarBadge = document.getElementById('solar-status');
+                    if (sol1V > 1.0 || sol2V > 1.0) { 
+                        solarBadge.className = 'status-badge charging'; 
+                        solarBadge.innerText = 'CHARGING (ACTIVE)';
+                    } else {
+                        solarBadge.className = 'status-badge draining'; 
+                        solarBadge.innerText = 'DISCHARGING';
+                    }
+                }
+            }
+            else if (validPayload.startsWith("#I")) { 
+                let p = validPayload.split(',');
+                if (p.length >= 6) {
+                    let qw = parseFloat(p[2]), qx = parseFloat(p[3]), qy = parseFloat(p[4]), qz = parseFloat(p[5]);
+                    
+                    let roll = Math.atan2(2 * (qw * qx + qy * qz), 1 - 2 * (qx * qx + qy * qy)) * (180 / Math.PI);
+                    let pitch = Math.asin(Math.max(-1, Math.min(1, 2 * (qw * qy - qz * qx)))) * (180 / Math.PI);
+                    let yaw = Math.atan2(2 * (qw * qz + qx * qy), 1 - 2 * (qy * qy + qz * qz)) * (180 / Math.PI);
+
+                    tsRoll.append(now, roll); document.getElementById('txt-roll').innerText = roll.toFixed(1);
+                    tsPitch.append(now, pitch); document.getElementById('txt-pitch').innerText = pitch.toFixed(1);
+                    tsYaw.append(now, yaw); document.getElementById('txt-yaw').innerText = yaw.toFixed(1);
+
+                    targetRot.roll = roll;
+                    targetRot.pitch = pitch;
+                    targetRot.yaw = yaw;
+                }
+            }
+            else if (validPayload.startsWith("#J")) {
+                let p = validPayload.split(',');
+                if(p.length >= 6) {
+                    let press = parseFloat(p[5]); 
+                    document.getElementById('val-press').innerHTML = `${press.toFixed(2)} <small style="font-size:10px; color:#667;">hPa</small>`;
+                }
+            }
+            else if (validPayload.startsWith("#L")) {
+                let p = validPayload.split(',');
+                if(p.length >= 4) { 
+                    document.getElementById('val-co2').innerHTML = `${parseInt(p[2])} <small style="font-size:10px; color:#667;">PPM</small>`; 
+                }
+            }
+        }
+
+        let missionStart = Date.now();
+        function startMissionTimer() {
+            setInterval(() => {
+                let d = Math.floor((Date.now() - missionStart)/1000);
+                let h = Math.floor(d/3600).toString().padStart(2,'0');
+                let m = Math.floor((d%3600)/60).toString().padStart(2,'0');
+                let s = (d%60).toString().padStart(2,'0');
+                document.getElementById('val-time').innerText = `T+${h}:${m}:${s}`;
+                document.getElementById('sys-clock').innerText = new Date().toISOString().split('T')[1].split('.')[0];
+            }, 1000);
+        }
+
+        window.switchMainView = function(viewId, btn) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+            const grid = document.getElementById('main-grid');
+            if(viewId === 'lidar' || viewId === 'isl') { grid.classList.add('full-mode'); } else { grid.classList.remove('full-mode'); }
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById('view-' + viewId).classList.add('active');
+            if(viewId === 'map' && lMap) setTimeout(() => { lMap.invalidateSize(); }, 300);
+            
+            if(viewId === 'dashboard' && renderer && camera) {
+                setTimeout(() => {
+                    const cont = document.getElementById('3d-attitude-container');
+                    camera.aspect = cont.clientWidth / cont.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(cont.clientWidth, cont.clientHeight);
+                }, 100);
+            }
+        }
+
+        let globalLogs = [];
+        function log(type, msg) {
+            let ts = new Date().toLocaleTimeString('en-US',{hour12:false});
+            globalLogs.unshift([ts, type, msg]);
+            let div = document.createElement('div'); div.className = 'log';
+            let c = type==='TX'?'l-tx':(type==='RX'?'l-rx':(type==='ERR'?'l-err':'l-sys'));
+            div.innerHTML = `<span style="color:#667; font-size:9px; margin-right:5px;">${ts}</span><span class="${c}" style="margin-right:5px;">[${type}]</span>${msg}`;
+            let box = document.getElementById('dashboard-log');
+            box.prepend(div); if(box.childElementCount > 100) box.lastChild.remove();
+        }
+        function exportLogToPDF() {
+            if(!window.jspdf) {
+                console.error('jsPDF library not loaded');
+                return;
+            }
+            
+            const doc = new window.jspdf.jsPDF();
+            
+            doc.setProperties({
+                title: 'HELIOS X-1 OFFICIAL TELEMETRY REPORT',
+                subject: 'HELIOS X-1 Ground Station Data Log',
+                author: 'HELIOS X-1 Ground Station',
+                keywords: 'satellite, telemetry, mission control',
+                creator: 'HELIOS X-1 System v3.0'
+            });
+            
+            const missionStartTime = missionStart || Date.now();
+            const missionElapsed = Math.floor((Date.now() - missionStartTime) / 1000);
+            const hours = Math.floor(missionElapsed / 3600);
+            const minutes = Math.floor((missionElapsed % 3600) / 60);
+            const seconds = missionElapsed % 60;
+            const missionTimeStr = `T+${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            doc.setFontSize(16);
+            doc.setTextColor(41, 128, 185);
+            doc.text('HELIOS X-1 OFFICIAL TELEMETRY REPORT', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            const metadata = [
+                ['Mission:', 'HELIOS X-1'],
+                ['Operator:', 'SUT_LIDARS'],
+                ['Generated:', new Date().toLocaleString()],
+                ['Duration:', missionTimeStr]
+            ];
+            
+            let yPos = 35;
+            metadata.forEach(([label, value]) => {
+                doc.text(label, 20, yPos, { align: 'left' });
+                doc.text(value, 60, yPos, { align: 'left' });
+                yPos += 8;
+            });
+            
+            doc.setDrawColor(41, 128, 185);
+            doc.setLineWidth(0.5);
+            doc.line(20, yPos, 190, yPos);
+            
+            yPos += 15;
+            doc.setFontSize(12);
+            doc.setTextColor(41, 128, 185);
+            doc.text('MISSION SUMMARY', 105, yPos, { align: 'center' });
+            
+            yPos += 12;
+            doc.setFontSize(10);
+            doc.setTextColor(60, 60, 60);
+            const summaryData = [
+                ['Total Log Entries:', globalLogs.length.toString()],
+                ['Mission Elapsed Time:', missionTimeStr],
+                ['System Status:', 'OPERATIONAL']
+            ];
+            
+            summaryData.forEach(([label, value]) => {
+                doc.text(label, 30, yPos, { align: 'left' });
+                doc.text(value, 120, yPos, { align: 'left' });
+                yPos += 8;
+            });
+            
+            doc.setDrawColor(41, 128, 185);
+            doc.line(20, yPos, 190, yPos);
+            
+            yPos += 15;
+            doc.setFontSize(12);
+            doc.setTextColor(41, 128, 185);
+            doc.text('TELEMETRY DATA LOG', 105, yPos, { align: 'center' });
+            
+            yPos += 15;
+            
+            const tableData = globalLogs.map(([timestamp, type, message]) => [
+                timestamp,
+                type,
+                message
+            ]);
+            
+            doc.autoTable({
+                head: ['TIME', 'TYPE', 'MESSAGE'],
+                body: tableData,
+                startY: yPos,
+                theme: 'striped',
+                headStyles: {
+                    fillColor: [41, 128, 185],
+                    textColor: 255,
+                    fontStyle: 'helvetica',
+                    fontSize: 10
+                },
+                bodyStyles: {
+                    fillColor: [245, 245, 245],
+                    textColor: 60,
+                    fontStyle: 'courier',
+                    fontSize: 9
+                },
+                alternateRowStyles: {
+                    fillColor: [255, 255, 255],
+                    textColor: 60,
+                    fontStyle: 'courier',
+                    fontSize: 9
+                },
+                margin: { top: 10, left: 20, right: 20, bottom: 20 },
+                styles: { cellPadding: 3, lineWidth: 0.1 }
+            });
+            
+            const pageCount = doc.internal.getNumberOfPages();
+            const pageHeight = doc.internal.pageSize.height;
+            
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(100, 100, 100);
+                doc.text(`Page ${i} of ${pageCount}`, 190, pageHeight - 10, { align: 'center' });
+                
+                doc.setFontSize(7);
+                doc.setTextColor(150, 150, 150);
+                doc.text('HELIOS X-1 Ground Station - Official Data Log - CONFIDENTIAL', 105, pageHeight - 15, { align: 'center' });
+            }
+            
+            doc.save('HELIOS_X-1_Mission_Report.pdf');
+        }
+
+        var lMap, satMark, pathLine; let orbitPath = []; 
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                lMap = L.map('map-view', { zoomControl: false }).setView([13.75, 100.50], 3);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(lMap);
+                satMark = L.circleMarker([0,0], { color: '#00f0ff', radius: 5, fillOpacity: 1 }).addTo(lMap);
+                pathLine = L.polyline([], { color: '#f36c21', weight: 2, dashArray: '4, 4', opacity: 0.8 }).addTo(lMap);
+            } catch(e) {}
+        });
+        function updateMap(lat, lon) {
+            if(!lMap) return;
+            let pos = [parseFloat(lat), parseFloat(lon)];
+            satMark.setLatLng(pos); lMap.panTo(pos);
+            orbitPath.push(pos); if (orbitPath.length > 300) orbitPath.shift(); 
+            pathLine.setLatLngs(orbitPath);
+            document.getElementById('d-lat').innerText = parseFloat(lat).toFixed(4); document.getElementById('d-lon').innerText = parseFloat(lon).toFixed(4);
+        }
+
+        let scene, camera, renderer, satModelPivot;
+        
+        let targetRot = { roll: 0, pitch: 0, yaw: 0 };
+        const LERP_FACTOR = 0.08; 
+
+        function init3DModel() {
+            const container = document.getElementById('3d-attitude-container');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 0, 5);
+
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1); dirLight.position.set(5, 5, 5); scene.add(dirLight);
+
+            const loader = new THREE.GLTFLoader();
+            loader.load('cubesat.glb', function (gltf) {
+                document.getElementById('3d-loading-text').style.display = 'none';
+                container.appendChild(renderer.domElement);
+                
+                let rawModel = gltf.scene;
+
+                const box = new THREE.Box3().setFromObject(rawModel);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const targetSize = 1.8; 
+                const scale = targetSize / maxDim; 
+                
+                rawModel.scale.set(scale, scale, scale);
+                rawModel.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+
+                satModelPivot = new THREE.Group();
+                satModelPivot.add(rawModel);
+                scene.add(satModelPivot);
+
+            }, undefined, function (error) {
+                console.error('Error loading 3D model:', error);
+                document.getElementById('3d-loading-text').innerHTML = '<span style="color:var(--danger)">ERROR LOADING MODEL<br>Check Console</span>';
+            });
+
+            window.addEventListener('resize', () => {
+                if(container.clientWidth > 0) {
+                    camera.aspect = container.clientWidth / container.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(container.clientWidth, container.clientHeight);
+                }
+            });
+            animate3D();
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            
+            if (satModelPivot) {
+                const targetRollRad = targetRot.roll * (Math.PI / 180);
+                const targetPitchRad = targetRot.pitch * (Math.PI / 180);
+                const targetYawRad = targetRot.yaw * (Math.PI / 180);
+                
+                satModelPivot.rotation.z += (targetRollRad - satModelPivot.rotation.z) * LERP_FACTOR;
+                satModelPivot.rotation.x += (targetPitchRad - satModelPivot.rotation.x) * LERP_FACTOR;
+                satModelPivot.rotation.y += (targetYawRad - satModelPivot.rotation.y) * LERP_FACTOR;
+            }
+            
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
