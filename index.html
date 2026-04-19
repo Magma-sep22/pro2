@@ -22,11 +22,16 @@
     
     <style>
         :root {
-            --bg-core: #050a10; --bg-panel: rgba(10, 20, 30, 0.9);
-            --pri: #f36c21; --pri-cyan: #00f0ff; --sec: #0099ff; 
-            --warn: #ffcc00; --danger: #ff003c; --success: #00ff9d; 
-            --glass-border: 1px solid rgba(243, 108, 33, 0.3);
-            --hud-glow: 0 0 10px rgba(243, 108, 33, 0.4);
+            --bg-core: #05080c; 
+            --bg-panel: rgba(10, 15, 22, 0.85);
+            --pri: #f36c21; /* Orange - Accel */
+            --pri-cyan: #00bfff; /* Cyan - Gyro */
+            --pri-yellow: #ffb700; /* Yellow - Mag */
+            --sec: #0077cc; 
+            --warn: #ffb700; 
+            --danger: #e62e2e; 
+            --success: #00d282; 
+            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
             --font-head: 'Orbitron', sans-serif;
             --font-ui: 'Rajdhani', sans-serif; 
             --font-data: 'JetBrains Mono', monospace;
@@ -34,135 +39,154 @@
 
         * { box-sizing: border-box; user-select: none; }
         
-        body { margin: 0; padding: 0; background-color: var(--bg-core); color: var(--pri); font-family: var(--font-ui); height: 100vh; width: 100vw; overflow: hidden; background-image: radial-gradient(circle at 50% 50%, rgba(243, 108, 33, 0.1) 0%, transparent 70%), linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.85) 0%, transparent 1px); background-size: 100% 100%, 40px 40px, 40px 40px; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); } ::-webkit-scrollbar-thumb { background: var(--sec); border-radius: 3px; }
+        body { 
+            margin: 0; padding: 0; background-color: var(--bg-core); 
+            color: var(--pri); font-family: var(--font-ui); 
+            height: 100vh; width: 100vw; overflow: hidden; 
+            background-image: linear-gradient(0deg, rgba(255,255,255,0.03) 1px, transparent 1px), 
+                              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); 
+            background-size: 30px 30px; 
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); } ::-webkit-scrollbar-thumb { background: #334; border-radius: 2px; }
+
+        .tabular-data { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+        .text-ok { color: var(--success) !important; text-shadow: 0 0 10px rgba(0, 210, 130, 0.3); }
+        .text-warn { color: var(--warn) !important; text-shadow: 0 0 10px rgba(255, 183, 0, 0.3); }
+        .text-crit { color: var(--danger) !important; text-shadow: 0 0 10px rgba(230, 46, 46, 0.3); }
+        .text-info { color: var(--pri-cyan) !important; }
+        .text-pri { color: var(--pri) !important; }
+        .text-yellow { color: var(--pri-yellow) !important; }
 
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #020406; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; transition: opacity 0.5s ease; overflow: hidden; }
-        .login-bg-grid { position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background-image: linear-gradient(rgba(243, 108, 33, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(243, 108, 33, 0.1) 1px, transparent 1px); background-size: 50px 50px; transform: perspective(500px) rotateX(60deg) translateY(0); animation: gridMove 10s linear infinite; opacity: 0.3; pointer-events: none; }
-        @keyframes gridMove { 0% { transform: perspective(500px) rotateX(60deg) translateY(0); } 100% { transform: perspective(500px) rotateX(60deg) translateY(50px); } }
-        .login-box { width: 100vw; height: 100vh; padding: 0; background: rgba(5, 10, 16, 0.95); backdrop-filter: blur(10px); border: none; box-shadow: inset 0 0 150px rgba(0,0,0,1); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; position: fixed; top: 0; left: 0; z-index: 9999; opacity: 0; animation: fadeIn 1s forwards; }
+        .login-bg-grid { position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px); background-size: 40px 40px; transform: perspective(500px) rotateX(60deg) translateY(0); animation: gridMove 15s linear infinite; opacity: 0.3; pointer-events: none; }
+        @keyframes gridMove { 0% { transform: perspective(500px) rotateX(60deg) translateY(0); } 100% { transform: perspective(500px) rotateX(60deg) translateY(40px); } }
+        .login-box { width: 100vw; height: 100vh; padding: 0; background: rgba(5, 8, 12, 0.95); backdrop-filter: blur(10px); border: none; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; position: fixed; top: 0; left: 0; z-index: 9999; opacity: 0; animation: fadeIn 1s forwards; }
         @keyframes fadeIn { to { opacity: 1; } }
-        .login-title { font-family: var(--font-head); font-size: 28px; color: #fff; margin-bottom: 5px; letter-spacing: 4px; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
-        .login-sub { font-family: var(--font-data); font-size: 11px; color: var(--sec); margin-bottom: 35px; letter-spacing: 2px; text-transform: uppercase; }
-        .input-group { position: relative; width: 100%; max-width: 420px; margin-bottom: 25px; }
-        .login-input { width: 100%; background: rgba(0, 0, 0, 0.4); border: 1px solid #334; color: #fff; padding: 15px; font-family: var(--font-data); font-size: 18px; text-align: center; outline: none; transition: 0.3s; letter-spacing: 3px; }
-        .login-input:focus { border-color: var(--pri); box-shadow: 0 0 20px rgba(243, 108, 33, 0.15); background: rgba(243, 108, 33, 0.05); }
-        .login-btn { width: 100%; max-width: 420px; background: transparent; color: var(--pri); border: 1px solid var(--pri); padding: 15px; font-family: var(--font-head); font-weight: 700; font-size: 14px; cursor: pointer; letter-spacing: 2px; transition: 0.2s; text-transform: uppercase; }
-        .login-btn:hover { background: rgba(243, 108, 33, 0.1); box-shadow: 0 0 25px rgba(243, 108, 33, 0.3); text-shadow: 0 0 8px var(--pri); }
-        .login-error { color: var(--danger); font-family: var(--font-data); font-size: 12px; margin-top: 20px; height: 15px; opacity: 0; transition: opacity 0.3s; text-shadow: 0 0 10px var(--danger); letter-spacing: 1px; background: rgba(255,0,0,0.1); display: inline-block; padding: 2px 10px; }
+        .login-title { font-family: var(--font-head); font-size: 24px; color: #fff; margin-bottom: 5px; letter-spacing: 4px; }
+        .login-sub { font-family: var(--font-data); font-size: 11px; color: #8892b0; margin-bottom: 35px; letter-spacing: 2px; text-transform: uppercase; }
+        .input-group { position: relative; width: 100%; max-width: 380px; margin-bottom: 20px; }
+        .login-input { width: 100%; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 12px; font-family: var(--font-data); font-size: 16px; text-align: center; outline: none; transition: 0.3s; letter-spacing: 3px; }
+        .login-input:focus { border-color: var(--pri); background: rgba(243, 108, 33, 0.05); }
+        .login-btn { width: 100%; max-width: 380px; background: rgba(243, 108, 33, 0.1); color: var(--pri); border: 1px solid var(--pri); padding: 12px; font-family: var(--font-ui); font-weight: 700; font-size: 14px; cursor: pointer; letter-spacing: 2px; transition: 0.2s; text-transform: uppercase; }
+        .login-btn:hover { background: var(--pri); color: #000; }
+        .login-error { color: var(--danger); font-family: var(--font-data); font-size: 12px; margin-top: 20px; height: 15px; opacity: 0; transition: opacity 0.3s; letter-spacing: 1px; background: rgba(230, 46, 46, 0.1); display: inline-block; padding: 4px 12px; border: 1px solid rgba(230, 46, 46, 0.3); }
 
-        .title-bar { height: 60px; background: linear-gradient(90deg, rgba(10,15,20,0.98), rgba(10,15,20,0.9)); border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; padding: 0 25px; z-index: 2000; position: relative; flex-shrink: 0; }
-        .app-logo { font-family: var(--font-head); font-size: 22px; color: var(--pri); letter-spacing: 2px; display: flex; align-items: center; gap: 12px; text-shadow: var(--hud-glow); }
-        .nav-tabs { display: flex; gap: 8px; }
-        .nav-btn { background: transparent; border: 1px solid rgba(243, 108, 33, 0.3); color: rgba(255,255,255,0.7); padding: 8px 20px; font-family: var(--font-ui); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%); }
-        .nav-btn:hover { color: var(--pri); border-color: var(--pri); background: rgba(243, 108, 33, 0.1); }
-        .nav-btn.active { background: var(--pri); color: #000; font-weight: 700; border-color: var(--pri); box-shadow: 0 0 15px rgba(243, 108, 33, 0.4); }
-        .sys-info { font-family: var(--font-data); font-size: 12px; color: var(--pri); background: rgba(243, 108, 33, 0.1); padding: 8px 20px; border-left: 2px solid var(--pri); margin-right: 140px; }
+        .title-bar { height: 50px; background: #0a0f16; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; padding: 0 25px; z-index: 2000; position: relative; flex-shrink: 0; }
+        .app-logo { font-family: var(--font-head); font-size: 18px; color: var(--pri); letter-spacing: 2px; display: flex; align-items: center; gap: 12px; }
+        .nav-tabs { display: flex; gap: 4px; height: 100%; align-items: flex-end; }
+        .nav-btn { background: transparent; border: 1px solid rgba(255,255,255,0.15); border-bottom: none; color: #8892b0; padding: 6px 20px; font-family: var(--font-ui); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; border-radius: 2px 2px 0 0; margin-bottom: -1px; }
+        .nav-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .nav-btn.active { background: rgba(243, 108, 33, 0.15); color: var(--pri); border-color: var(--pri); border-bottom: 2px solid var(--pri); }
+        .sys-info { font-family: var(--font-data); font-size: 11px; color: #fff; background: rgba(255,255,255,0.05); padding: 6px 12px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center;}
 
-        .grid-container { display: grid; grid-template-columns: 290px 1fr; grid-template-rows: 1fr; gap: 15px; padding: 15px; height: calc(100vh - 60px); overflow: hidden; transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .grid-container { display: grid; grid-template-columns: 260px 1fr; grid-template-rows: 1fr; gap: 10px; padding: 10px; height: calc(100vh - 50px); overflow: hidden; transition: all 0.3s; }
         .grid-container.full-mode { grid-template-columns: 0px 1fr; gap: 0; }
         .grid-container.full-mode .sidebar { opacity: 0; padding: 0; pointer-events: none; }
-        .grid-container.full-mode .content-area { padding-left: 15px; }
+        .grid-container.full-mode .content-area { padding-left: 10px; }
 
-        .hud-panel { background: var(--bg-panel); border: var(--glass-border); position: relative; backdrop-filter: blur(10px); border-radius: 4px; clip-path: polygon(0 15px, 15px 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px)); display: flex; flex-direction: column; }
-        .p-content { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .hud-header { font-family: var(--font-head); font-size: 12px; letter-spacing: 1px; font-weight: 600; color: var(--pri); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(243, 108, 33, 0.2); padding-bottom: 8px; flex-shrink: 0; }
+        .hud-panel { background: var(--bg-panel); border: var(--glass-border); position: relative; backdrop-filter: blur(5px); border-radius: 2px; display: flex; flex-direction: column; }
+        .p-content { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .hud-header { font-family: var(--font-head); font-size: 11px; letter-spacing: 1px; font-weight: 600; color: #8892b0; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; flex-shrink: 0; text-transform: uppercase; }
 
-        .sidebar { display: flex; flex-direction: column; gap: 15px; overflow-y: auto; width: 100%; transition: opacity 0.3s; }
-        .ctrl-group { margin-bottom: 5px; }
-        .label { font-size: 12px; color: #aab; margin-bottom: 5px; display: flex; justify-content: space-between; font-family: var(--font-ui); }
-        .hud-input { width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: var(--font-ui); font-size: 14px; padding: 8px 10px; outline: none; transition: 0.3s; margin-bottom: 5px; }
-        .hud-input:focus { border-color: var(--pri); box-shadow: 0 0 10px rgba(243, 108, 33, 0.2); }
-        .hud-btn { width: 100%; background: linear-gradient(90deg, rgba(243, 108, 33, 0.15), transparent); border: 1px solid var(--pri); color: var(--pri); font-family: var(--font-ui); font-weight: 600; font-size: 12px; padding: 10px; margin-top: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; }
-        .hud-btn:hover { background: var(--pri); color: #000; box-shadow: 0 0 20px var(--pri); }
-        .hud-btn-small { background: rgba(243, 108, 33, 0.1); border: 1px solid var(--pri); color: var(--pri); font-family: var(--font-ui); font-size: 10px; font-weight: 700; padding: 4px 12px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; clip-path: polygon(5px 0, 100% 0, 100% 100%, 0 100%, 0 5px); }
-        .hud-btn-small:hover { background: var(--pri); color: #000; box-shadow: 0 0 10px var(--pri); }
-        .status { width: 8px; height: 8px; background: #333; box-shadow: 0 0 0 2px rgba(255,255,255,0.1); transform: rotate(45deg); }
-        .status.on { background: var(--success); box-shadow: 0 0 10px var(--success); }
-        .status.off { background: var(--danger); box-shadow: 0 0 10px var(--danger); }
-        .status.idle { background: var(--warn); box-shadow: 0 0 10px var(--warn); }
+        .sidebar { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; width: 100%; transition: opacity 0.3s; }
+        .ctrl-group { margin-bottom: 2px; }
+        .label { font-size: 10px; color: #8892b0; margin-bottom: 4px; display: flex; justify-content: space-between; font-family: var(--font-ui); text-transform: uppercase; font-weight: 600;}
+        .hud-input { width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: var(--font-ui); font-size: 12px; padding: 6px 8px; outline: none; transition: 0.2s; margin-bottom: 5px; border-radius: 2px; }
+        .hud-input:focus { border-color: var(--pri); }
+        .hud-btn { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--pri); color: var(--pri); font-family: var(--font-ui); font-weight: 600; font-size: 11px; padding: 8px; margin-top: 2px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; border-radius: 2px; }
+        .hud-btn:hover { background: var(--pri); color: #000; }
+        .hud-btn-small { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: var(--font-ui); font-size: 10px; font-weight: 600; padding: 4px 10px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; border-radius: 2px; }
+        .hud-btn-small:hover { background: #fff; color: #000; }
+        .status { width: 8px; height: 8px; background: #333; border-radius: 50%; }
+        .status.on { background: var(--success); }
+        .status.off { background: var(--danger); }
+        .status.idle { background: var(--warn); }
 
-        .content-area { display: flex; flex-direction: column; gap: 15px; overflow: hidden; height: 100%; min-height: 0; }
-        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; height: 90px; flex-shrink: 0; }
-        .stat-box { background: linear-gradient(160deg, rgba(255,255,255,0.03), transparent); border: 1px solid rgba(255,255,255,0.1); border-left: 3px solid var(--pri); border-radius: 4px; padding: 10px 15px; display: flex; flex-direction: column; justify-content: center; }
-        .stat-label { font-size: 11px; color: #aab; font-family: var(--font-head); margin-bottom: 2px; letter-spacing: 1px; }
-        .stat-val { font-family: var(--font-data); font-size: 28px; font-weight: 700; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
-        .stat-unit { font-size: 14px; color: var(--pri); margin-left: 5px; font-family: var(--font-ui); }
+        .content-area { display: flex; flex-direction: column; gap: 8px; overflow: hidden; height: 100%; min-height: 0; }
+        
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; height: 70px; flex-shrink: 0; }
+        .stat-box { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.08); border-top: 2px solid var(--pri); border-radius: 2px; padding: 10px 14px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
+        .stat-box::before { content: ''; position: absolute; top: 0; right: 0; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(243, 108, 33, 0.03)); pointer-events: none; z-index: 0; }
+        .stat-label { font-size: 10px; font-family: var(--font-head); color: #8892b0; letter-spacing: 1.5px; text-transform: uppercase; text-align: left; display: flex; align-items: center; gap: 6px; z-index: 2; }
+        .stat-label::before { content: ''; display: inline-block; width: 5px; height: 5px; background-color: var(--pri); border-radius: 50%; box-shadow: 0 0 5px var(--pri); }
+        .stat-val-container { text-align: right; z-index: 2; display: flex; justify-content: flex-end; align-items: baseline; }
+        .stat-val { font-family: var(--font-data); font-size: 24px; font-weight: 500; color: #e2e8f0; }
+        .stat-unit { font-size: 11px; color: #64748b; margin-left: 6px; font-family: var(--font-ui); font-weight: 600; }
 
-        .view-section { flex: 1; display: none; flex-direction: column; min-height: 0; opacity: 0; transition: opacity 0.3s ease-in-out; height: 100%; }
+        .view-section { flex: 1; display: none; flex-direction: column; min-height: 0; opacity: 0; transition: opacity 0.2s; height: 100%; }
         .view-section.active { display: flex; opacity: 1; }
         
-        .telemetry-chart-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); padding: 8px; border-radius: 4px; position: relative; display: flex; flex-direction: column; flex: 1; min-width: 0; }
-        .chart-title { font-family: var(--font-head); font-size: 10px; color: #aaa; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; letter-spacing: 1px; }
+        .telemetry-chart-box { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 2px; position: relative; display: flex; flex-direction: column; flex: 1; min-width: 0; overflow: hidden; }
+        .grid-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 1; background-image: linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px); background-size: 25% 25%; background-position: center center; }
+        .telemetry-chart-box canvas { position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100% !important; height: 100% !important; z-index: 0; }
+        .chart-info-overlay { position: absolute; top: 6px; left: 8px; right: 8px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 10; }
+        .c-label { font-family: var(--font-head); font-size: 10px; color: #8892b0; letter-spacing: 1px; text-shadow: 1px 1px 3px rgba(0,0,0,1); }
+        .c-val { font-family: var(--font-data); font-size: 13px; font-weight: 700; text-shadow: 1px 1px 3px rgba(0,0,0,1); }
+        .chart-bounds { position: absolute; right: 8px; top: 25px; bottom: 8px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; pointer-events: none; z-index: 5; }
+        .chart-bounds span { font-family: var(--font-data); font-size: 8px; color: #475569; }
+
+        .telemetry-badge-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; flex-shrink: 0; width: 100%; }
+        .telemetry-badge { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.08); padding: 6px 12px; border-radius: 2px; display: flex; justify-content: space-between; align-items: baseline; font-family: var(--font-data); font-size: 13px; }
+        .telemetry-badge span { font-family: var(--font-ui); font-size: 10px; color: #64748b; letter-spacing: 1px; font-weight: 600; text-transform: uppercase; }
+
+        .log-panel { height: 120px; flex-shrink: 0; display: flex; flex-direction: column; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 2px; padding: 8px; overflow: hidden; }
+
+        .power-card { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 8px; display: flex; flex-direction: column; border-radius: 2px; flex-shrink: 0; margin-bottom: 5px;}
+        .power-title { font-family: var(--font-ui); font-weight: 600; font-size: 10px; color: #8892b0; margin-bottom: 4px; text-align: left; text-transform: uppercase; }
+        .batt-container { width: 100%; height: 15px; background: #0a0f16; border: 1px solid rgba(255,255,255,0.1); border-radius: 2px; position: relative; margin-bottom: 4px; overflow: hidden; }
+        .batt-fill { height: 100%; background: var(--pri); width: 0%; transition: width 0.5s ease, background 0.5s ease; }
+        .batt-text { font-family: var(--font-data); font-size: 16px; color: #e2e8f0; font-weight: 500; text-align: right; }
         
-        .telemetry-badge-container { display: flex; gap: 8px; flex-shrink: 0; margin-top: 5px; width: 100%; }
-        .telemetry-badge { flex: 1; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-data); font-size: 14px; }
-        .telemetry-badge span { font-family: var(--font-head); font-size: 10px; color: #889; letter-spacing: 1px; text-transform: uppercase; }
+        .status-badge { text-align: center; padding: 4px; font-family: var(--font-ui); font-weight: 600; font-size: 11px; border-radius: 2px; margin-top: 2px; letter-spacing: 1px; transition: 0.3s; }
+        .status-badge.charging { background: rgba(0, 210, 130, 0.1); border: 1px solid var(--success); color: var(--success); }
+        .status-badge.draining { background: rgba(230, 46, 46, 0.1); border: 1px solid var(--danger); color: var(--danger); }
 
-        .power-card { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 12px; display: flex; flex-direction: column; border-radius: 4px; flex-shrink: 0; margin-bottom: 10px;}
-        .power-title { font-family: var(--font-head); font-size: 11px; color: #aaa; margin-bottom: 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px; }
-        .batt-container { width: 100%; height: 25px; background: #111; border: 1px solid #444; border-radius: 2px; position: relative; margin-bottom: 5px; overflow: hidden; }
-        .batt-fill { height: 100%; background: linear-gradient(90deg, var(--pri), var(--warn)); width: 0%; transition: width 0.5s ease-in-out; box-shadow: 0 0 15px var(--pri); }
-        .batt-grid { position: absolute; top:0; left:0; width: 100%; height: 100%; background-image: linear-gradient(90deg, transparent 95%, #000 95%); background-size: 10% 100%; opacity: 0.3; }
-        .batt-text { font-family: var(--font-data); font-size: 24px; color: #fff; font-weight: bold; text-align: right; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
-        .status-badge { text-align: center; padding: 10px; font-family: var(--font-head); font-weight: bold; font-size: 14px; border-radius: 4px; transition: all 0.3s; margin-top: 5px; letter-spacing: 1px; }
-        .status-badge.charging { background: rgba(0, 255, 157, 0.1); border: 1px solid var(--success); color: var(--success); box-shadow: 0 0 15px rgba(0,255,157,0.2); }
-        .status-badge.draining { background: rgba(255, 0, 60, 0.1); border: 1px solid var(--danger); color: var(--danger); box-shadow: 0 0 15px rgba(255,0,60,0.2); }
+        .health-grid { display: flex; flex-direction: column; gap: 6px; }
+        .health-box { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); border-left: 3px solid; border-radius: 2px; padding: 8px 12px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; transition: all 0.3s ease; }
+        .health-box .h-info { display: flex; flex-direction: column; align-items: flex-start; }
+        .health-box .h-title { font-family: var(--font-head); font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+        .health-box .h-sub { font-family: var(--font-ui); font-size: 9px; font-weight: 600; letter-spacing: 1px; color: #8892b0; text-transform: uppercase; margin-top: 2px; }
+        .health-box .h-status-text { font-family: var(--font-data); font-size: 12px; font-weight: 700; letter-spacing: 1px; }
 
-        .debug-panel { position: fixed; top: 60px; right: -420px; width: 420px; height: calc(100vh - 60px); background: rgba(5, 10, 16, 0.98); border-left: 1px solid var(--pri); box-shadow: -10px 0 30px rgba(0,0,0,0.9); z-index: 3000; transition: right 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; backdrop-filter: blur(10px); }
-        .debug-panel.open { right: 0; }
-        .debug-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid rgba(243, 108, 33, 0.3); font-family: var(--font-head); color: var(--pri); font-size: 12px; letter-spacing: 1px; }
-        .close-debug-btn { background: transparent; border: none; color: var(--danger); font-size: 16px; cursor: pointer; font-family: var(--font-data); font-weight: bold; transition: 0.2s; }
-        .close-debug-btn:hover { text-shadow: 0 0 10px var(--danger); transform: scale(1.2); }
-        .btn-show-log { position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); border: 1px solid var(--pri); color: var(--pri); padding: 10px 20px; font-family: var(--font-head); font-size: 12px; font-weight: bold; cursor: pointer; z-index: 2500; transition: 0.2s; backdrop-filter: blur(5px); letter-spacing: 1px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
-        .btn-show-log:hover { background: var(--pri); color: #000; box-shadow: 0 0 20px rgba(243, 108, 33, 0.5); }
-        .term-box { background: rgba(0,0,0,0.6); padding: 10px; font-family: var(--font-data); overflow-y: auto; display: flex; flex-direction: column-reverse; color: #ffffff; border-radius: 4px; }
-        .log { margin-bottom: 3px; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 2px; }
-        .l-sys { color: var(--warn); } .l-tx { color: var(--pri); } .l-rx { color: var(--success); } .l-err { color: var(--danger); font-weight: bold; background: rgba(255,0,0,0.1); }
+        .health-box.ok { border-left-color: var(--success); border-color: rgba(0, 210, 130, 0.2); color: var(--success); box-shadow: inset 0 0 15px rgba(0, 210, 130, 0.1); text-shadow: 0 0 5px rgba(0, 210, 130, 0.5); }
+        .health-box.ok .h-sub { color: rgba(0, 210, 130, 0.6); text-shadow: none; }
+        .health-box.err { border-left-color: var(--danger); border-color: rgba(230, 46, 46, 0.3); color: var(--danger); box-shadow: inset 0 0 15px rgba(230, 46, 46, 0.1); text-shadow: 0 0 5px rgba(230, 46, 46, 0.5); animation: pulse-red 1.5s infinite; }
+        .health-box.err .h-sub { color: rgba(230, 46, 46, 0.6); text-shadow: none; }
+        @keyframes pulse-red { 0% { box-shadow: inset 0 0 15px rgba(230, 46, 46, 0.15); border-left-color: var(--danger); } 50% { box-shadow: inset 0 0 30px rgba(230, 46, 46, 0.4); border-left-color: #ff4d4d; } 100% { box-shadow: inset 0 0 15px rgba(230, 46, 46, 0.15); border-left-color: var(--danger); } }
+
+        .toggle-group { display: flex; background: rgba(0,0,0,0.5); padding: 3px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); }
+        .toggle-btn { background: transparent; color: #8892b0; border: none; font-family: var(--font-ui); font-size: 10px; font-weight: 700; padding: 4px 12px; cursor: pointer; transition: 0.2s; text-transform: uppercase; border-radius: 2px; letter-spacing: 1px; }
+        .toggle-btn:hover { color: #fff; }
+        .toggle-btn.active { background: var(--pri); color: #000; box-shadow: 0 0 8px rgba(243, 108, 33, 0.4); }
+
+        .term-box { background: transparent; flex: 1; min-height: 0; font-family: var(--font-data); overflow-y: auto; display: flex; flex-direction: column-reverse; color: #cbd5e1; }
+        .log { margin-bottom: 2px; border-bottom: 1px solid rgba(255,255,255,0.02); padding-bottom: 2px; line-height: 1.3; }
+        .l-sys { color: #8892b0; } .l-tx { color: var(--pri); } .l-rx { color: var(--success); } .l-err { color: var(--danger); background: rgba(230,46,46,0.1); }
 
         #map-view { width: 100%; height: 100%; position: absolute; top:0; left:0; }
-        .leaflet-container { background: #050a10; } .leaflet-tile-pane { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
-        .overlay-data { position: absolute; bottom: 15px; left: 15px; z-index: 500; background: rgba(0,0,0,0.8); border-left: 3px solid var(--pri); padding: 10px 15px; backdrop-filter: blur(5px); pointer-events: none; }
-        .data-row { font-family: var(--font-data); font-size: 14px; color: var(--pri); margin: 3px 0; } .data-row b { color: #fff; }
+        .leaflet-container { background: #05080c; } .leaflet-tile-pane { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(85%) grayscale(20%); }
+        .overlay-data { position: absolute; bottom: 15px; left: 15px; z-index: 500; background: rgba(5,8,12,0.9); border: 1px solid rgba(255,255,255,0.1); border-left: 3px solid var(--pri); padding: 10px 15px; pointer-events: none; }
+        .data-row { font-family: var(--font-data); font-size: 13px; color: #8892b0; margin: 3px 0; } .data-row b { color: #e2e8f0; }
 
-        #view-isl { display: none; flex-direction: row; gap: 15px; } #view-isl.active { display: flex; }
-        .isl-col-right { flex: 1; display: flex; flex-direction: column; gap: 15px; }
-        
-        #view-lidar { display: none; align-items: center; justify-content: center; } #view-lidar.active { display: flex; }
-        .radar-layout { display: flex; width: 100%; height: 100%; max-width: 1200px; gap: 30px; align-items: center; justify-content: center; padding: 20px; }
-        .radar-scope-container { position: relative; width: 500px; height: 500px; background: radial-gradient(circle, rgba(0,255,157,0.05) 0%, rgba(0,0,0,0.8) 70%); border-radius: 50%; border: 2px solid rgba(243, 108, 33, 0.4); box-shadow: 0 0 40px rgba(0,0,0,0.8), inset 0 0 30px rgba(0,255,157,0.1); flex-shrink: 0; }
-        .radar-scope-container canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 50%; }
-        .radar-data-panel { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 500px; }
-        .big-stat-box { background: rgba(10, 20, 30, 0.6); border: 1px solid rgba(243, 108, 33, 0.2); border-radius: 4px; padding: 25px 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.3s; text-align: center; }
-        .bs-label { font-size: 13px; color: #889; letter-spacing: 2px; margin-bottom: 5px; font-family: var(--font-head); }
-        .bs-val { font-size: 42px; font-weight: 700; color: #fff; font-family: var(--font-data); text-shadow: 0 0 15px rgba(0,0,0,0.5); }
-        .bs-unit { font-size: 14px; color: var(--pri); font-weight: 500; margin-top: 5px; }
-
-        .isl-lidar-grid { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 16px; height: 100%; min-height: 0; }
-        
-        .isl-column { display: flex; flex-direction: column; gap: 16px; height: 100%; }
-        
-        .isl-section-header { font-family: var(--font-head); font-size: 14px; color: var(--pri); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        
-        .isl-data-grid { display: grid; grid-template-columns: 1fr; gap: 8px; flex: 1; overflow-y: auto; }
-        
-        .data-cell { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); padding: 16px; display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; }
-        
-        .data-label { font-family: var(--font-head); font-size: 11px; color: #94A3B8; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
-        
+        #view-isl { display: none; flex-direction: row; gap: 10px; } #view-isl.active { display: flex; }
+        .isl-lidar-grid { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 10px; height: 100%; min-height: 0; }
+        .isl-column { display: flex; flex-direction: column; gap: 10px; height: 100%; }
+        .isl-section-header { font-family: var(--font-ui); font-weight: 600; font-size: 11px; color: #8892b0; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .isl-data-grid { display: grid; grid-template-columns: 1fr; gap: 6px; flex: 1; overflow-y: auto; }
+        .data-cell { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 10px; display: flex; flex-direction: column; justify-content: space-between; min-height: 60px; border-radius: 2px; }
+        .data-label { font-family: var(--font-ui); font-size: 10px; color: #64748b; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; font-weight: 600; }
         .data-content { display: flex; align-items: baseline; gap: 8px; }
+        .data-value { font-family: var(--font-data); font-size: 18px; font-weight: 500; color: #e2e8f0; font-variant-numeric: tabular-nums; }
+        .data-unit { font-family: var(--font-ui); font-size: 11px; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase; }
         
-        .data-value { font-family: var(--font-data); font-size: 24px; font-weight: 700; color: #E2E8F0; font-variant-numeric: tabular-nums; }
-        
-        .data-unit { font-family: var(--font-ui); font-size: 12px; color: #94A3B8; letter-spacing: 0.5px; text-transform: uppercase; }
-        
-        .threat-indicator.clear { background: rgba(16, 185, 129, 0.2); color: #10B981; border: 1px solid #10B981; padding: 4px 8px; border-radius: 2px; }
-        
-        .threat-indicator.critical { background: rgba(239, 68, 68, 0.2); color: #EF4444; border: 1px solid #EF4444; padding: 4px 8px; border-radius: 2px; }
-        
-        .lidar-cell { background: #111; border: 1px solid rgba(255,255,255,0.1); padding: 16px; display: flex; align-items: center; justify-content: center; position: relative; flex: 1; min-height: 400px; }
-        
-        #lidar-canvas { border-radius: 2px; }
+        .lidar-cell { background: #05080c; border: 1px solid rgba(255,255,255,0.1); padding: 10px; display: flex; align-items: center; justify-content: center; position: relative; flex: 1; min-height: 300px; border-radius: 2px; }
+
+        .sim-btn-active {
+            background: rgba(0, 191, 255, 0.2) !important;
+            border-color: var(--pri-cyan) !important;
+            color: var(--pri-cyan) !important;
+            box-shadow: 0 0 10px rgba(0, 191, 255, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -170,11 +194,11 @@
     <div id="login-overlay">
         <div class="login-bg-grid"></div>
         <div class="login-box">
-            <div class="login-icon"><img src="logo.png" style="width: 400px; height: auto; margin-bottom: 15px;" alt="TCE SAT LOGO"></div>
-            <div class="login-title">X-1 COMMAND INTERFACE</div>
-            <div class="login-sub">EXPERIMENTAL PROTOTYPE | MISSION CONTROL</div>
+            <div class="login-icon"><img src="logo.png" style="width: 300px; height: auto; margin-bottom: 20px; opacity: 0.9;" alt="TCE SAT LOGO" onerror="this.style.display='none'"></div>
+            <div class="login-title">HELIOS X-1 TERMINAL</div>
+            <div class="login-sub">RESTRICTED ACCESS | OPERATOR AUTHENTICATION</div>
             <div class="input-group"><input type="password" id="login-input" class="login-input" placeholder="ENTER ACCESS CODE" onkeypress="handleEnter(event)"></div>
-            <button class="login-btn" onclick="checkLogin()">INITIALIZE LINK</button>
+            <button class="login-btn" onclick="checkLogin()">AUTHENTICATE</button>
             <div id="login-msg" class="login-error">ACCESS DENIED : INVALID CREDENTIALS</div>
         </div>
     </div>
@@ -182,15 +206,21 @@
     <div id="main-interface" style="display: none; height: 100vh; flex-direction: column;">
         <div class="title-bar">
            <div class="app-logo">
-                <img src="logo.png" style="height: 45px; width: auto; object-fit: contain; filter: drop-shadow(0 0 5px var(--pri));" alt="LOGO">
-                <span style="font-family: var(--font-head); font-size: 18px; color: var(--pri); margin-left: 12px;">HELIOS X-1</span>
+                <img src="logo.png" style="height: 30px; width: auto; object-fit: contain; opacity: 0.9;" alt="LOGO" onerror="this.style.display='none'">
+                <span style="font-family: var(--font-head); font-size: 16px; color: #fff; margin-left: 8px;">HELIOS X-1</span>
             </div>
             <div class="nav-tabs">
                 <button class="nav-btn active" onclick="switchMainView('dashboard', this)">DASHBOARD</button>
                 <button class="nav-btn" onclick="switchMainView('map', this)">ORBIT MAP</button>
                 <button class="nav-btn" onclick="switchMainView('isl', this)">INTERSAT & LIDAR</button>
             </div>
-            <div class="sys-info">UTC TIME <span id="sys-clock" style="font-weight: bold; margin-left: 5px;">00:00:00</span></div>
+            
+            <div class="sys-info">
+                <span style="margin-right: 15px; color: #8892b0; font-family: var(--font-ui); font-weight: 600; letter-spacing: 1px;">
+                    LATENCY <span id="sys-ping" class="tabular-data" style="font-weight: bold; margin-left: 4px; color: #475569;">--- ms</span>
+                </span>
+                UTC TIME <span id="sys-clock" class="tabular-data" style="font-weight: bold; margin-left: 5px; color: var(--pri);">00:00:00</span>
+            </div>
         </div>
 
         <div class="grid-container" id="main-grid">
@@ -203,12 +233,15 @@
                     <select class="hud-input" id="gs-baud-select">
                     <option value="9600">9600 BAUD</option>
                     <option value="115200" selected>115200 BAUD</option></select>
-                    <button class="hud-btn" id="btn-gs" onclick="connectSerial()">CONNECT</button>
+                    <div style="display:flex; gap: 5px;">
+                        <button class="hud-btn" id="btn-gs" onclick="connectSerial()" style="flex:1;">CONNECT</button>
+                        <button class="hud-btn" id="btn-sim" onclick="toggleSimulator()" style="flex:1; border-color: var(--pri-cyan); color: var(--pri-cyan);">SIMULATE</button>
+                    </div>
                 </div>
                 <div class="hud-header" style="margin-top: 10px;"><span>COMMAND UPLINK</span></div>
                 <div class="ctrl-group">
                     <input type="text" id="cmd-input" class="hud-input" placeholder="> Enter command..." onkeypress="handleCmdEnter(event)">
-                    <button class="hud-btn" id="btn-tx" style="border-color: var(--warn); color: var(--warn);" onclick="transmitCommand()">TRANSMIT</button>
+                    <button class="hud-btn" id="btn-tx" style="border-color: #64748b; color: #e2e8f0; background: rgba(255,255,255,0.05);" onclick="transmitCommand()">TRANSMIT</button>
                 </div>
 
                 <div class="hud-header" style="margin-top: 10px;"><span>POWER SYSTEM</span></div>
@@ -218,65 +251,155 @@
                 </div>
                 <div class="power-card">
                     <div class="power-title">BATTERY CAPACITY</div>
-                    <div class="batt-container"><div class="batt-grid"></div><div id="batt-fill" class="batt-fill" style="width: 0%;"></div></div>
-                    <div id="batt-pct-text" class="batt-text">0%</div>
+                    <div class="batt-container"><div id="batt-fill" class="batt-fill" style="width: 0%;"></div></div>
+                    <div id="batt-pct-text" class="batt-text tabular-data">0%</div>
                 </div>
 
-                <div style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; text-align: center; font-size: 9px; opacity: 0.5;">
-                    HELIOS X-1 V3.0<br>COPYRIGHT 2026
+                <div class="hud-header" style="margin-top: 10px;"><span>SYSTEM HEALTH</span></div>
+                <div class="health-grid">
+                    <div class="health-box err" id="health-mcb">
+                        <div class="h-info"><span class="h-title">MCB</span><span class="h-sub">CTRL & IMU</span></div>
+                        <span class="h-status-text" id="status-text-mcb">OFFLINE</span>
+                    </div>
+                    <div class="health-box err" id="health-asb">
+                        <div class="h-info"><span class="h-title">ASB</span><span class="h-sub">ENV SENSOR</span></div>
+                        <span class="h-status-text" id="status-text-asb">OFFLINE</span>
+                    </div>
+                    <div class="health-box err" id="health-eps">
+                        <div class="h-info"><span class="h-title">EPS</span><span class="h-sub">POWER SYS</span></div>
+                        <span class="h-status-text" id="status-text-eps">OFFLINE</span>
+                    </div>
+                    <div class="health-box err" id="health-gps">
+                        <div class="h-info"><span class="h-title">GPS</span><span class="h-sub">NAV & TRACK</span></div>
+                        <span class="h-status-text" id="status-text-gps">OFFLINE</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; text-align: center; font-size: 9px; color: #64748b; font-family: var(--font-data);">
+                    HELIOS X-1 V3.0<br>SYS. BUILD 2026
                 </div>
             </aside>
 
             <main class="content-area">
                 <section class="stats-row">
-                    <div class="stat-box" style="border-left-color: var(--pri);"><div class="stat-label">BATTERY VOLTAGE</div><div><span class="stat-val" id="val-batt">--.--</span><span class="stat-unit">V</span></div></div>
-                    <div class="stat-box" style="border-left-color: var(--success);"><div class="stat-label">SIGNAL RSSI</div><div><span class="stat-val" id="val-rssi">--</span><span class="stat-unit">dBm</span></div></div>
-                    <div class="stat-box" style="border-left-color: var(--warn);"><div class="stat-label">INTERNAL TEMP</div><div><span class="stat-val" id="val-temp">--.-</span><span class="stat-unit">°C</span></div></div>
-                    <div class="stat-box" style="border-left-color: #fff;"><div class="stat-label">MISSION TIME (MET)</div><div><span class="stat-val" id="val-time" style="font-size: 24px;">T+00:00:00</span></div></div>
+                    <div class="stat-box box-batt">
+                        <div class="stat-label">MAIN BUS VOLTAGE</div>
+                        <div class="stat-val-container"><span class="stat-val tabular-data" id="val-batt">--.--</span><span class="stat-unit">V</span></div>
+                    </div>
+                    <div class="stat-box box-rssi">
+                        <div class="stat-label">LINK SIGNAL RSSI</div>
+                        <div class="stat-val-container"><span class="stat-val tabular-data" id="val-rssi">--</span><span class="stat-unit">dBm</span></div>
+                    </div>
+                    <div class="stat-box box-temp">
+                        <div class="stat-label">INTERNAL CORE TEMP</div>
+                        <div class="stat-val-container"><span class="stat-val tabular-data" id="val-temp">--.-</span><span class="stat-unit">°C</span></div>
+                    </div>
+                    <div class="stat-box box-time">
+                        <div class="stat-label">MISSION ELAPSED TIME</div>
+                        <div class="stat-val-container"><span class="stat-val tabular-data" id="val-time">T+00:00:00</span></div>
+                    </div>
                 </section>
 
                 <section id="view-dashboard" class="view-section active">
-                    <div class="hud-panel p-content" style="padding: 15px;">
-                        <div class="hud-header">
-                            <div style="display:flex; align-items:center; gap:10px;"><span>TELEMETRY DASHBOARD</span><div class="status on" style="width:6px; height:6px;"></div></div>
-                        </div>
-                        
-                        <div style="display: flex; flex-direction: column; height: 100%; gap: 10px;">
-                            <div style="display: flex; gap: 15px; flex: 1; min-height: 0;">
-                                
-                                <div class="telemetry-chart-box" style="flex: 0 0 300px; display: flex; flex-direction: column; overflow: hidden;">
-                                    <div class="chart-title"><span>3D ATTITUDE</span></div>
-                                    <div id="3d-attitude-container" style="flex: 1; width: 100%; position: relative; background: radial-gradient(circle, rgba(243, 108, 33, 0.05) 0%, transparent 70%); border-radius: 4px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                                        <span id="3d-loading-text" style="color: var(--warn); font-size: 10px; text-align: center; font-family: var(--font-data); z-index: 10;">
-                                            LOADING CUBESAT.GLB...
-                                        </span>
-                                    </div>
+                    <div class="hud-panel p-content" style="padding: 8px;"> 
+                        <div style="display: flex; flex-direction: column; height: 100%; gap: 6px;"> 
+                            
+                            <div class="hud-header" style="margin-bottom: 2px; border-bottom: none; align-items: flex-end;">
+                                <div style="display:flex; align-items:center; gap:8px; padding-bottom: 6px;">
+                                    <span>MISSION TELEMETRY</span><div class="status on" style="width:6px; height:6px;"></div>
                                 </div>
+                                <div class="toggle-group">
+                                    <button class="toggle-btn active" id="btn-view-sensors" onclick="toggleDashView('sensors')">RAW SENSORS</button>
+                                    <button class="toggle-btn" id="btn-view-3d" onclick="toggleDashView('3d')">3D ATTITUDE</button>
+                                </div>
+                            </div>
 
-                                <div style="flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 15px; min-width: 0;">
-                                    <div class="telemetry-chart-box"><div class="chart-title"><span>ROLL (deg)</span><span id="txt-roll" style="color:var(--pri)">0.0</span></div><canvas id="cv-roll" style="width:100%; height:100%; min-height:40px;"></canvas></div>
-                                    <div class="telemetry-chart-box"><div class="chart-title"><span>PITCH (deg)</span><span id="txt-pitch" style="color:var(--pri)">0.0</span></div><canvas id="cv-pitch" style="width:100%; height:100%; min-height:40px;"></canvas></div>
-                                    <div class="telemetry-chart-box"><div class="chart-title"><span>YAW (deg)</span><span id="txt-yaw" style="color:var(--pri)">0.0</span></div><canvas id="cv-yaw" style="width:100%; height:100%; min-height:40px;"></canvas></div>
-                                    
-                                    <div class="telemetry-chart-box"><div class="chart-title"><span>ALTITUDE (km)</span><span id="txt-alt" style="color:var(--sec)">0.0</span></div><canvas id="cv-alt" style="width:100%; height:100%; min-height:40px;"></canvas></div>
-                                    <div class="telemetry-chart-box"><div class="chart-title"><span>TARGET DIST (m)</span><span id="txt-dist" style="color:var(--danger)">0</span></div><canvas id="cv-dist" style="width:100%; height:100%; min-height:40px;"></canvas></div>
-                                    <div class="telemetry-chart-box"><div class="chart-title"><span>REL SPEED (m/s)</span><span id="txt-spd" style="color:var(--warn)">0.0</span></div><canvas id="cv-spd" style="width:100%; height:100%; min-height:40px;"></canvas></div>
+                            <div id="dash-sensors" style="display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 6px; flex: 1; min-height: 0;">
+                                <div class="telemetry-chart-box">
+                                    <div class="grid-overlay"></div>
+                                    <div class="chart-info-overlay"><span class="c-label">ACCEL X <small>(m/s²)</small></span><span id="txt-ax" class="c-val tabular-data text-pri">0.0</span></div>
+                                    <div class="chart-bounds"><span class="bound-max">25.0</span><span class="bound-min">-25.0</span></div>
+                                    <canvas id="cv-ax"></canvas>
+                                </div>
+                                <div class="telemetry-chart-box">
+                                    <div class="grid-overlay"></div>
+                                    <div class="chart-info-overlay"><span class="c-label">ACCEL Y <small>(m/s²)</small></span><span id="txt-ay" class="c-val tabular-data text-pri">0.0</span></div>
+                                    <div class="chart-bounds"><span class="bound-max">25.0</span><span class="bound-min">-25.0</span></div>
+                                    <canvas id="cv-ay"></canvas>
+                                </div>
+                                <div class="telemetry-chart-box">
+                                    <div class="grid-overlay"></div>
+                                    <div class="chart-info-overlay"><span class="c-label">ACCEL Z <small>(m/s²)</small></span><span id="txt-az" class="c-val tabular-data text-pri">0.0</span></div>
+                                    <div class="chart-bounds"><span class="bound-max">25.0</span><span class="bound-min">-25.0</span></div>
+                                    <canvas id="cv-az"></canvas>
+                                </div>
+                                
+                                <div class="telemetry-chart-box">
+                                    <div class="grid-overlay"></div>
+                                    <div class="chart-info-overlay"><span class="c-label">GYRO X <small>(deg/s)</small></span><span id="txt-gx" class="c-val tabular-data text-info">0.0</span></div>
+                                    <div class="chart-bounds"><span class="bound-max">500</span><span class="bound-min">-500</span></div>
+                                    <canvas id="cv-gx"></canvas>
+                                </div>
+                                <div class="telemetry-chart-box">
+                                    <div class="grid-overlay"></div>
+                                    <div class="chart-info-overlay"><span class="c-label">GYRO Y <small>(deg/s)</small></span><span id="txt-gy" class="c-val tabular-data text-info">0.0</span></div>
+                                    <div class="chart-bounds"><span class="bound-max">500</span><span class="bound-min">-500</span></div>
+                                    <canvas id="cv-gy"></canvas>
+                                </div>
+                                <div class="telemetry-chart-box">
+                                    <div class="grid-overlay"></div>
+                                    <div class="chart-info-overlay"><span class="c-label">GYRO Z <small>(deg/s)</small></span><span id="txt-gz" class="c-val tabular-data text-info">0.0</span></div>
+                                    <div class="chart-bounds"><span class="bound-max">500</span><span class="bound-min">-500</span></div>
+                                    <canvas id="cv-gz"></canvas>
+                                </div>
+                                
+                                <div class="telemetry-chart-box">
+                                    <div class="grid-overlay"></div>
+                                    <div class="chart-info-overlay"><span class="c-label">MAG X <small>(µT)</small></span><span id="txt-mx" class="c-val tabular-data text-yellow">0.0</span></div>
+                                    <div class="chart-bounds"><span class="bound-max">100</span><span class="bound-min">-100</span></div>
+                                    <canvas id="cv-mx"></canvas>
+                                </div>
+                                <div class="telemetry-chart-box">
+                                    <div class="grid-overlay"></div>
+                                    <div class="chart-info-overlay"><span class="c-label">MAG Y <small>(µT)</small></span><span id="txt-my" class="c-val tabular-data text-yellow">0.0</span></div>
+                                    <div class="chart-bounds"><span class="bound-max">100</span><span class="bound-min">-100</span></div>
+                                    <canvas id="cv-my"></canvas>
+                                </div>
+                                <div class="telemetry-chart-box">
+                                    <div class="grid-overlay"></div>
+                                    <div class="chart-info-overlay"><span class="c-label">MAG Z <small>(µT)</small></span><span id="txt-mz" class="c-val tabular-data text-yellow">0.0</span></div>
+                                    <div class="chart-bounds"><span class="bound-max">100</span><span class="bound-min">-100</span></div>
+                                    <canvas id="cv-mz"></canvas>
+                                </div>
+                            </div>
+
+                            <div id="dash-3d" style="display: none; flex: 1; min-height: 0; background-color: rgba(0,0,0,0.8); background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 30px 30px; background-position: center center; border: 1px solid rgba(255,255,255,0.08); border-top: 2px solid var(--pri); border-radius: 2px; position: relative;">
+                                <div id="3d-attitude-container" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; z-index: 1;">
+                                    <span id="3d-loading-text" class="tabular-data" style="color: #8892b0; font-size: 10px; z-index: 10;">AWAITING 3D MESH...</span>
+                                </div>
+                                <div class="chart-info-overlay" style="pointer-events:none; z-index: 2;">
+                                    <span class="c-label" style="font-size:12px; text-shadow: 0 0 10px #000;">LIVE 3D ATTITUDE (IMU FUSION)</span>
+                                    <div style="text-align:right; background: rgba(0,0,0,0.6); padding: 6px 10px; border-radius: 2px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(2px);">
+                                        <div class="c-label" style="margin-bottom: 2px;">ROLL: <span id="val-r3d" class="c-val text-pri" style="font-size: 16px;">0.0°</span></div>
+                                        <div class="c-label" style="margin-bottom: 2px;">PITCH: <span id="val-p3d" class="c-val text-pri" style="font-size: 16px;">0.0°</span></div>
+                                        <div class="c-label">YAW: <span id="val-y3d" class="c-val text-pri" style="font-size: 16px;">0.0°</span></div>
+                                    </div>
                                 </div>
                             </div>
                             
                             <div class="telemetry-badge-container">
-                                <div class="telemetry-badge"><span>GPS SATS</span><b id="val-sats" style="color:var(--pri-cyan)">0</b></div>
-                                <div class="telemetry-badge"><span>PRESSURE</span><b id="val-press" style="color:#fff">0.00 <small style="font-size:10px; color:#667;">hPa</small></b></div>
-                                <div class="telemetry-badge"><span>HUMIDITY</span><b id="val-humid" style="color:var(--success)">0.0 <small style="font-size:10px; color:#667;">%</small></b></div>
-                                <div class="telemetry-badge"><span>CO2 LEVEL</span><b id="val-co2" style="color:var(--warn)">0 <small style="font-size:10px; color:#667;">PPM</small></b></div>
+                                <div class="telemetry-badge"><span>GPS SATS</span><b id="val-sats" class="tabular-data text-info">0</b></div>
+                                <div class="telemetry-badge"><span>PRESSURE</span><b id="val-press" class="tabular-data" style="color:#e2e8f0">0.00 <small style="font-size:9px; color:#64748b;">hPa</small></b></div>
+                                <div class="telemetry-badge"><span>HUMIDITY</span><b id="val-humid" class="tabular-data text-ok">0.0 <small style="font-size:9px; color:#64748b;">%</small></b></div>
+                                <div class="telemetry-badge"><span>CO2 LEVEL</span><b id="val-co2" class="tabular-data">0 <small style="font-size:9px; color:#64748b;">PPM</small></b></div>
                             </div>
                             
-                            <div class="hud-panel p-content" style="flex: 0 0 120px; display: flex; flex-direction: column; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1);">
-                                <div class="hud-header">
-                                    <div style="display:flex; align-items:center; gap:10px;"><span>MISSION LOG</span><div class="status on" style="width:6px; height:6px;"></div></div>
-                                    <button class="hud-btn-small" onclick="exportLogToPDF()">EXPORT DATA</button>
+                            <div class="log-panel">
+                                <div class="hud-header" style="margin-bottom: 4px; border-bottom: none; padding-bottom: 0;">
+                                    <div style="display:flex; align-items:center; gap:8px;"><span>MISSION LOG</span></div>
+                                    <button class="hud-btn-small" onclick="exportLogToPDF()">EXPORT</button>
                                 </div>
-                                <div class="term-box" id="dashboard-log" style="flex: 1; font-size: 11px; min-height: 0;"></div>
+                                <div class="term-box" id="dashboard-log" style="font-size: 10px;"></div>
                             </div>
                         </div>
                     </div>
@@ -285,10 +408,10 @@
                 <section id="view-map" class="view-section hud-panel">
                     <div id="map-view"></div>
                     <div class="overlay-data" style="top: 15px; left: 15px; bottom: auto;">
-                        <div class="data-row">LAT: <b id="d-lat">0.0000</b></div>
-                        <div class="data-row">LON: <b id="d-lon">0.0000</b></div>
-                        <div class="data-row">ALT: <b id="d-alt">0</b> km</div>
-                        <div class="data-row">VEL: <b id="d-vel">0.00</b> km/s</div>
+                        <div class="data-row tabular-data">LAT: <b id="d-lat">0.0000</b></div>
+                        <div class="data-row tabular-data">LON: <b id="d-lon">0.0000</b></div>
+                        <div class="data-row tabular-data">ALT: <b id="d-alt">0</b> km</div>
+                        <div class="data-row tabular-data">VEL: <b id="d-vel">0.00</b> km/s</div>
                     </div>
                 </section>
 
@@ -299,11 +422,9 @@
                             <div class="isl-column">
                                 <div class="isl-section-header">INTERSAT LINK</div>
                                 <div class="isl-data-grid">
-                                    <div class="data-cell"><div class="data-label">BANDWIDTH</div><div class="data-content"><span class="data-value" id="isl-bw">---</span><span class="data-unit">Mbps</span></div></div>
-                                    <div class="data-cell"><div class="data-label">LATENCY</div><div class="data-content"><span class="data-value" id="isl-lat">---</span><span class="data-unit">ms</span></div></div>
-                                    <div class="data-cell"><div class="data-label">PACKET LOSS</div><div class="data-content"><span class="data-value" id="isl-loss">0%</span><span class="data-unit">STABLE</span></div></div>
-                                    <div class="data-cell"><div class="data-label">MODULATION</div><div class="data-content"><span class="data-value">QPSK</span><span class="data-unit">ADAPTIVE</span></div></div>
-                                    <div class="data-cell"><div class="data-label">SNR</div><div class="data-content"><span class="data-value" id="isl-snr">--</span><span class="data-unit">dB</span></div></div>
+                                    <div class="data-cell"><div class="data-label">BANDWIDTH</div><div class="data-content"><span class="data-value tabular-data" id="isl-bw">---</span><span class="data-unit">Mbps</span></div></div>
+                                    <div class="data-cell"><div class="data-label">LATENCY</div><div class="data-content"><span class="data-value tabular-data" id="isl-lat">---</span><span class="data-unit">ms</span></div></div>
+                                    <div class="data-cell"><div class="data-label">PACKET LOSS</div><div class="data-content"><span class="data-value tabular-data" id="isl-loss">0%</span><span class="data-unit">STABLE</span></div></div>
                                 </div>
                             </div>
                             <div class="isl-column">
@@ -313,11 +434,9 @@
                             <div class="isl-column">
                                 <div class="isl-section-header">TARGET PARAMETERS</div>
                                 <div class="isl-data-grid">
-                                    <div class="data-cell"><div class="data-label">TARGET ID</div><div class="data-content"><span class="data-value" id="lid-target-id">SAT-02</span><span class="data-unit">OBJECT</span></div></div>
-                                    <div class="data-cell"><div class="data-label">RANGE TO TARGET</div><div class="data-content"><span class="data-value" id="lid-dist">---</span><span class="data-unit">meters</span></div></div>
-                                    <div class="data-cell"><div class="data-label">RELATIVE SPEED</div><div class="data-content"><span class="data-value" id="lid-spd">0.0</span><span class="data-unit">m/s</span></div></div>
-                                    <div class="data-cell"><div class="data-label">OBJECT AZIMUTH</div><div class="data-content"><span class="data-value" id="lid-dir">---</span><span class="data-unit">degrees</span></div></div>
-                                    <div class="data-cell"><div class="data-label">STATUS</div><div class="data-content"><span class="data-value threat-indicator" id="lid-status">CLEAR</span><span class="data-unit">THREAT</span></div></div>
+                                    <div class="data-cell"><div class="data-label">RANGE TO TARGET</div><div class="data-content"><span class="data-value tabular-data" id="lid-dist">---</span><span class="data-unit">meters</span></div></div>
+                                    <div class="data-cell"><div class="data-label">RELATIVE SPEED</div><div class="data-content"><span class="data-value tabular-data" id="lid-spd">0.0</span><span class="data-unit">m/s</span></div></div>
+                                    <div class="data-cell"><div class="data-label">STATUS</div><div class="data-content"><span class="data-value threat-indicator clear" id="lid-status">CLEAR</span></div></div>
                                 </div>
                             </div>
                         </div>
@@ -330,8 +449,15 @@
     <script>
         const socket = io(); const PASSCODE = "admin"; 
         
-        const tsRoll = new TimeSeries(), tsPitch = new TimeSeries(), tsYaw = new TimeSeries();
-        const tsAlt = new TimeSeries(), tsDist = new TimeSeries(), tsSpd = new TimeSeries();
+        const tsAx = new TimeSeries(), tsAy = new TimeSeries(), tsAz = new TimeSeries();
+        const tsGx = new TimeSeries(), tsGy = new TimeSeries(), tsGz = new TimeSeries();
+        const tsMx = new TimeSeries(), tsMy = new TimeSeries(), tsMz = new TimeSeries();
+
+        let lastSeen = { mcb: 0, asb: 0, eps: 0, gps: 0 };
+        
+        let scene, camera, renderer, satModelPivot;
+        let targetRot = { roll: 0, pitch: 0, yaw: 0 };
+        const LERP_FACTOR = 0.08; 
 
         function verifyChecksum(rawData) {
             if (!rawData || !rawData.includes('*')) return null;
@@ -339,103 +465,129 @@
         }
 
         function initTelemetryChart(canvasId, tsObj, colorCode, minV, maxV) {
-            let chart = new SmoothieChart({ millisPerPixel: 50, grid: { fillStyle: 'transparent', strokeStyle: 'rgba(255,255,255,0.05)', verticalSections: 4, borderVisible: false }, labels: { fillStyle: '#888', precision: 1, fontSize: 9, fontFamily: 'JetBrains Mono' }, maxValue: maxV, minValue: minV, responsive: true });
-            chart.addTimeSeries(tsObj, { lineWidth: 1.5, strokeStyle: colorCode, fillStyle: colorCode + '1A' });
+            let chart = new SmoothieChart({ 
+                millisPerPixel: 40, 
+                grid: { fillStyle: 'transparent', strokeStyle: 'transparent', borderVisible: false }, 
+                labels: { disabled: true }, 
+                maxValue: maxV, minValue: minV, responsive: true 
+            });
+            chart.addTimeSeries(tsObj, { lineWidth: 1.5, strokeStyle: colorCode }); 
             chart.streamTo(document.getElementById(canvasId), 1000);
         }
 
-        function initLidarGrid() {
-            const canvas = document.getElementById('lidar-canvas');
-            if(!canvas) return;
-            
-            const ctx = canvas.getContext('2d');
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const radius = Math.min(centerX, centerY) - 20;
-            
-            ctx.fillStyle = '#111';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.strokeStyle = 'rgba(0, 240, 255, 0.2)';
-            ctx.lineWidth = 1;
-            for(let i = 1; i <= 4; i++) {
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, (radius / 4) * i, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-            
-            ctx.beginPath();
-            ctx.moveTo(centerX - radius, centerY);
-            ctx.lineTo(centerX + radius, centerY);
-            ctx.moveTo(centerX, centerY - radius);
-            ctx.lineTo(centerX, centerY + radius);
-            ctx.stroke();
-            
-            ctx.fillStyle = '#667';
-            ctx.font = '10px JetBrains Mono';
-            ctx.textAlign = 'center';
-            ctx.fillText('1000m', centerX, centerY - radius + 15);
-            ctx.fillText('2000m', centerX, centerY - (radius/2) + 15);
-            ctx.fillText('3000m', centerX, centerY + 15);
-            ctx.fillText('4000m', centerX, centerY + (radius/2) + 15);
-            ctx.fillText('5000m', centerX, centerY + radius + 15);
-            
-            ctx.fillText('0°', centerX + radius + 15, centerY + 3);
-            ctx.fillText('90°', centerX - 3, centerY - radius - 5);
-            ctx.fillText('180°', centerX - radius - 25, centerY + 3);
-            ctx.fillText('270°', centerX - 3, centerY + radius + 15);
-        }
-
-        function addLidarBlip(range, azimuth) {
-            const canvas = document.getElementById('lidar-canvas');
-            if(!canvas) return;
-            
-            const ctx = canvas.getContext('2d');
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const maxRadius = Math.min(centerX, centerY) - 20;
-            
-            const angleRad = (azimuth - 90) * (Math.PI / 180);
-            const distance = (range / 5000) * maxRadius;
-            const x = centerX + (distance * Math.cos(angleRad));
-            const y = centerY + (distance * Math.sin(angleRad));
-            
-            ctx.fillStyle = 'rgba(0, 240, 255, 0.8)';
-            ctx.beginPath();
-            ctx.arc(x, y, 4, 0, Math.PI * 2);
-            ctx.fill();
-            
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = 'rgba(0, 240, 255, 0.5)';
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
-            initTelemetryChart('cv-roll', tsRoll, '#f36c21', -90, 90);
-            initTelemetryChart('cv-pitch', tsPitch, '#f36c21', -90, 90);
-            initTelemetryChart('cv-yaw', tsYaw, '#f36c21', 0, 360);
-            initTelemetryChart('cv-alt', tsAlt, '#0099ff', 380, 420);
-            initTelemetryChart('cv-dist', tsDist, '#ff003c', 0, 6000);
-            initTelemetryChart('cv-spd', tsSpd, '#ffcc00', 0, 600);
-            initLidarGrid();
+            // Accel - Orange
+            initTelemetryChart('cv-ax', tsAx, '#f36c21', -25, 25);
+            initTelemetryChart('cv-ay', tsAy, '#f36c21', -25, 25);
+            initTelemetryChart('cv-az', tsAz, '#f36c21', -25, 25);
+            
+            // Gyro - Cyan
+            initTelemetryChart('cv-gx', tsGx, '#00bfff', -500, 500);
+            initTelemetryChart('cv-gy', tsGy, '#00bfff', -500, 500);
+            initTelemetryChart('cv-gz', tsGz, '#00bfff', -500, 500);
+            
+            // Mag - Yellow
+            initTelemetryChart('cv-mx', tsMx, '#ffb700', -100, 100);
+            initTelemetryChart('cv-my', tsMy, '#ffb700', -100, 100);
+            initTelemetryChart('cv-mz', tsMz, '#ffb700', -100, 100);
+
             init3DModel();
         });
+
+        window.toggleDashView = function(view) {
+            document.getElementById('btn-view-sensors').classList.remove('active');
+            document.getElementById('btn-view-3d').classList.remove('active');
+            
+            if (view === '3d') {
+                document.getElementById('btn-view-3d').classList.add('active');
+                document.getElementById('dash-sensors').style.display = 'none';
+                document.getElementById('dash-3d').style.display = 'flex';
+                
+                if(renderer && camera) {
+                    setTimeout(() => {
+                        const cont = document.getElementById('3d-attitude-container');
+                        camera.aspect = cont.clientWidth / cont.clientHeight;
+                        camera.updateProjectionMatrix();
+                        renderer.setSize(cont.clientWidth, cont.clientHeight);
+                    }, 50);
+                }
+            } else {
+                document.getElementById('btn-view-sensors').classList.add('active');
+                document.getElementById('dash-3d').style.display = 'none';
+                document.getElementById('dash-sensors').style.display = 'grid';
+            }
+        }
+
+        function init3DModel() {
+            const container = document.getElementById('3d-attitude-container');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 1.5, 8); 
+
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1); dirLight.position.set(5, 5, 5); scene.add(dirLight);
+
+            const gridHelper = new THREE.GridHelper( 15, 20, 0xf36c21, 0xffffff );
+            gridHelper.material.opacity = 0.15;
+            gridHelper.material.transparent = true;
+            gridHelper.position.y = -2; 
+            scene.add( gridHelper );
+
+            const loader = new THREE.GLTFLoader();
+            loader.load('cubesat.glb', function (gltf) {
+                document.getElementById('3d-loading-text').style.display = 'none';
+                container.appendChild(renderer.domElement);
+                
+                let rawModel = gltf.scene;
+                const box = new THREE.Box3().setFromObject(rawModel);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const targetSize = 2.5; 
+                const scale = targetSize / maxDim; 
+                
+                rawModel.scale.set(scale, scale, scale);
+                rawModel.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+
+                satModelPivot = new THREE.Group();
+                satModelPivot.add(rawModel);
+                scene.add(satModelPivot);
+
+            }, undefined, function (error) {
+                document.getElementById('3d-loading-text').innerHTML = '<span style="color:var(--danger)">SYS_ERROR: MESH_NOT_FOUND</span>';
+            });
+
+            window.addEventListener('resize', () => {
+                if(container.clientWidth > 0 && document.getElementById('dash-3d').style.display !== 'none') {
+                    camera.aspect = container.clientWidth / container.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(container.clientWidth, container.clientHeight);
+                }
+            });
+            animate3D();
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            if (satModelPivot) {
+                satModelPivot.rotation.z += (targetRot.roll * (Math.PI / 180) - satModelPivot.rotation.z) * LERP_FACTOR;
+                satModelPivot.rotation.x += (targetRot.pitch * (Math.PI / 180) - satModelPivot.rotation.x) * LERP_FACTOR;
+                satModelPivot.rotation.y += (targetRot.yaw * (Math.PI / 180) - satModelPivot.rotation.y) * LERP_FACTOR;
+            }
+            renderer.render(scene, camera);
+        }
 
         function checkLogin() {
             if(document.getElementById('login-input').value === PASSCODE) {
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('main-interface').style.display = 'flex';
                 if(lMap) lMap.invalidateSize();
-                log('SYS', 'User Authenticated.');
+                log('SYS', 'Operator Authenticated. Secure Link Established.');
                 startMissionTimer();
                 socket.emit('list-ports');
-                if(renderer && camera) {
-                    const cont = document.getElementById('3d-attitude-container');
-                    camera.aspect = cont.clientWidth / cont.clientHeight;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(cont.clientWidth, cont.clientHeight);
-                }
             } else { document.getElementById('login-msg').style.opacity = '1'; }
         }
         function handleEnter(e) { if(e.key === 'Enter') checkLogin(); }
@@ -456,111 +608,245 @@
 
         function processRawSerial(str) {
             str = str.trim(); 
-            
             const validPayload = verifyChecksum(str);
-            if (!validPayload) {
-                log('ERR', 'DROP (INVALID FORMAT): ' + str);
-                return; 
-            }
+            if (!validPayload) return;
 
-            log('RX', validPayload + '*OK'); 
+            log('RX', validPayload); 
             let now = new Date().getTime(); 
+            let p = validPayload.split(',');
 
-            if (validPayload.startsWith("#A")) { 
-                let p = validPayload.split(','); 
-                if (p.length >= 4) updateMap(p[2], p[3]); 
-            } 
-            else if (validPayload.startsWith("#B")) { 
-                let p = validPayload.split(',');
-                if (p.length >= 6) {
-                    let alt = parseFloat(p[2]); tsAlt.append(now, alt); 
-                    document.getElementById('txt-alt').innerText = alt.toFixed(1);
-                    document.getElementById('d-alt').innerText = alt.toFixed(1);
-                    document.getElementById('val-sats').innerText = parseInt(p[3]) || 0;
-                    let spd = parseFloat(p[4]); tsSpd.append(now, spd);
-                    document.getElementById('txt-spd').innerText = spd.toFixed(1);
-                    document.getElementById('d-vel').innerText = spd.toFixed(2);
-                }
-            }
-            else if (validPayload.startsWith("#C")) { 
-                let p = validPayload.split(',');
-                if (p.length >= 5) {
-                    document.getElementById('val-temp').innerText = parseFloat(p[2]).toFixed(1);
-                    document.getElementById('val-humid').innerHTML = `${parseFloat(p[4]).toFixed(1)} <small style="font-size:10px; color:#667;">%</small>`;
-                }
-            }
-            else if (validPayload.startsWith("#G")) { 
-                let p = validPayload.split(',');
-                if (p.length >= 8) {
-                    let volt = parseFloat(p[6]);
-                    let pct = parseFloat(p[7]);
-                    document.getElementById('val-batt').innerText = volt.toFixed(2);
-                    
-                    let battFill = document.getElementById('batt-fill');
-                    let battText = document.getElementById('batt-pct-text');
-                    battFill.style.width = pct + '%'; 
-                    battText.innerText = pct.toFixed(1) + '%';
-                    battFill.style.background = (pct < 20) ? 'var(--danger)' : 'linear-gradient(90deg, var(--pri), var(--warn))';
-                }
-            }
-            else if (validPayload.startsWith("#H")) {
-                let p = validPayload.split(',');
-                if (p.length >= 5) {
-                    let sol1V = parseFloat(p[2]);
-                    let sol2V = parseFloat(p[3]);
-                    let solarBadge = document.getElementById('solar-status');
-                    if (sol1V > 1.0 || sol2V > 1.0) { 
-                        solarBadge.className = 'status-badge charging'; 
-                        solarBadge.innerText = 'CHARGING (ACTIVE)';
-                    } else {
-                        solarBadge.className = 'status-badge draining'; 
-                        solarBadge.innerText = 'DISCHARGING';
+            if (validPayload.startsWith("#A") || validPayload.startsWith("#B")) lastSeen.gps = now;
+            if (validPayload.startsWith("#C") || validPayload.startsWith("#J") || validPayload.startsWith("#K") || validPayload.startsWith("#L") || validPayload.startsWith("#M") || validPayload.startsWith("#N") || validPayload.startsWith("#O")) lastSeen.asb = now;
+            if (validPayload.startsWith("#D") || validPayload.startsWith("#E") || validPayload.startsWith("#F") || validPayload.startsWith("#I")) lastSeen.mcb = now;
+            if (validPayload.startsWith("#G") || validPayload.startsWith("#H")) lastSeen.eps = now;
+
+            if (validPayload.startsWith("#B") && p.length >= 6) { 
+                let alt = parseFloat(p[2]);
+                let spd = parseFloat(p[4]);
+                document.getElementById('d-alt').innerText = alt.toFixed(1);
+                document.getElementById('val-sats').innerText = parseInt(p[3]) || 0;
+                document.getElementById('d-vel').innerText = spd.toFixed(2);
+                
+                if (lMap && satMark) {
+                    let lat = parseFloat(p[5]) || 14.87; 
+                    let lon = parseFloat(p[6]) || 102.01; 
+                    if(p.length >= 7) { 
+                        let newLatLng = [lat, lon];
+                        satMark.setLatLng(newLatLng);
+                        orbitPath.push(newLatLng);
+                        pathLine.setLatLngs(orbitPath);
+                        document.getElementById('d-lat').innerText = lat.toFixed(4);
+                        document.getElementById('d-lon').innerText = lon.toFixed(4);
                     }
                 }
             }
-            else if (validPayload.startsWith("#I")) { 
-                let p = validPayload.split(',');
-                if (p.length >= 6) {
-                    let qw = parseFloat(p[2]), qx = parseFloat(p[3]), qy = parseFloat(p[4]), qz = parseFloat(p[5]);
-                    
-                    let roll = Math.atan2(2 * (qw * qx + qy * qz), 1 - 2 * (qx * qx + qy * qy)) * (180 / Math.PI);
-                    let pitch = Math.asin(Math.max(-1, Math.min(1, 2 * (qw * qy - qz * qx)))) * (180 / Math.PI);
-                    let yaw = Math.atan2(2 * (qw * qz + qx * qy), 1 - 2 * (qy * qy + qz * qz)) * (180 / Math.PI);
+            else if (validPayload.startsWith("#C") && p.length >= 5) { 
+                let temp = parseFloat(p[2]);
+                let tempEl = document.getElementById('val-temp');
+                tempEl.innerText = temp.toFixed(1);
+                
+                tempEl.className = 'stat-val tabular-data ';
+                if(temp > 40) tempEl.classList.add('text-crit');
+                else if(temp > 30 || temp < 0) tempEl.classList.add('text-warn');
+                else tempEl.classList.add('text-ok');
+                
+                document.getElementById('val-humid').innerHTML = `${parseFloat(p[4]).toFixed(1)} <small style="font-size:9px; color:#64748b;">%</small>`;
+            }
+            else if (validPayload.startsWith("#D") && p.length >= 5) { 
+                let ax = parseFloat(p[2]), ay = parseFloat(p[3]), az = parseFloat(p[4]);
+                tsAx.append(now, ax); document.getElementById('txt-ax').innerText = ax.toFixed(1);
+                tsAy.append(now, ay); document.getElementById('txt-ay').innerText = ay.toFixed(1);
+                tsAz.append(now, az); document.getElementById('txt-az').innerText = az.toFixed(1);
+            }
+            else if (validPayload.startsWith("#E") && p.length >= 5) { 
+                let gx = parseFloat(p[2]), gy = parseFloat(p[3]), gz = parseFloat(p[4]);
+                tsGx.append(now, gx); document.getElementById('txt-gx').innerText = gx.toFixed(1);
+                tsGy.append(now, gy); document.getElementById('txt-gy').innerText = gy.toFixed(1);
+                tsGz.append(now, gz); document.getElementById('txt-gz').innerText = gz.toFixed(1);
+            }
+            else if (validPayload.startsWith("#F") && p.length >= 5) { 
+                let mx = parseFloat(p[2]), my = parseFloat(p[3]), mz = parseFloat(p[4]);
+                tsMx.append(now, mx); document.getElementById('txt-mx').innerText = mx.toFixed(1);
+                tsMy.append(now, my); document.getElementById('txt-my').innerText = my.toFixed(1);
+                tsMz.append(now, mz); document.getElementById('txt-mz').innerText = mz.toFixed(1);
+            }
+            else if (validPayload.startsWith("#G") && p.length >= 8) { 
+                let volt = parseFloat(p[6]);
+                let pct = parseFloat(p[7]);
+                document.getElementById('val-batt').innerText = volt.toFixed(2);
+                
+                let battFill = document.getElementById('batt-fill');
+                let battText = document.getElementById('batt-pct-text');
+                battFill.style.width = pct + '%'; 
+                battText.innerText = pct.toFixed(1) + '%';
 
-                    tsRoll.append(now, roll); document.getElementById('txt-roll').innerText = roll.toFixed(1);
-                    tsPitch.append(now, pitch); document.getElementById('txt-pitch').innerText = pitch.toFixed(1);
-                    tsYaw.append(now, yaw); document.getElementById('txt-yaw').innerText = yaw.toFixed(1);
-
-                    targetRot.roll = roll;
-                    targetRot.pitch = pitch;
-                    targetRot.yaw = yaw;
+                battText.className = 'batt-text tabular-data ';
+                if (pct <= 20) {
+                    battFill.style.background = 'var(--danger)';
+                    battText.classList.add('text-crit');
+                } else if (pct <= 40) {
+                    battFill.style.background = 'var(--warn)';
+                    battText.classList.add('text-warn');
+                } else {
+                    battFill.style.background = 'var(--success)';
+                    battText.classList.add('text-ok');
                 }
             }
-            else if (validPayload.startsWith("#J")) {
-                let p = validPayload.split(',');
-                if(p.length >= 6) {
-                    let press = parseFloat(p[5]); 
-                    document.getElementById('val-press').innerHTML = `${press.toFixed(2)} <small style="font-size:10px; color:#667;">hPa</small>`;
+            else if (validPayload.startsWith("#H") && p.length >= 5) {
+                let sol1V = parseFloat(p[2]), sol2V = parseFloat(p[3]);
+                let solarBadge = document.getElementById('solar-status');
+                if (sol1V > 1.0 || sol2V > 1.0) { 
+                    solarBadge.className = 'status-badge charging text-ok'; 
+                    solarBadge.innerText = 'CHARGING (ACTIVE)';
+                } else {
+                    solarBadge.className = 'status-badge draining text-warn'; 
+                    solarBadge.innerText = 'DISCHARGING';
                 }
             }
-            else if (validPayload.startsWith("#L")) {
-                let p = validPayload.split(',');
-                if(p.length >= 4) { 
-                    document.getElementById('val-co2').innerHTML = `${parseInt(p[2])} <small style="font-size:10px; color:#667;">PPM</small>`; 
-                }
+            else if (validPayload.startsWith("#I") && p.length >= 6) { 
+                let qw = parseFloat(p[2]), qx = parseFloat(p[3]), qy = parseFloat(p[4]), qz = parseFloat(p[5]);
+                let roll = Math.atan2(2 * (qw * qx + qy * qz), 1 - 2 * (qx * qx + qy * qy)) * (180 / Math.PI);
+                let pitch = Math.asin(Math.max(-1, Math.min(1, 2 * (qw * qy - qz * qx)))) * (180 / Math.PI);
+                let yaw = Math.atan2(2 * (qw * qz + qx * qy), 1 - 2 * (qy * qy + qz * qz)) * (180 / Math.PI);
+                
+                document.getElementById('val-r3d').innerText = roll.toFixed(1) + '°';
+                document.getElementById('val-p3d').innerText = pitch.toFixed(1) + '°';
+                document.getElementById('val-y3d').innerText = yaw.toFixed(1) + '°';
+                
+                targetRot.roll = roll;
+                targetRot.pitch = pitch;
+                targetRot.yaw = yaw;
+            }
+            else if (validPayload.startsWith("#J") && p.length >= 6) {
+                let press = parseFloat(p[5]); 
+                document.getElementById('val-press').innerHTML = `${press.toFixed(2)} <small style="font-size:9px; color:#64748b;">hPa</small>`;
             }
         }
 
         let missionStart = Date.now();
         function startMissionTimer() {
             setInterval(() => {
-                let d = Math.floor((Date.now() - missionStart)/1000);
+                let now = Date.now();
+                let d = Math.floor((now - missionStart)/1000);
                 let h = Math.floor(d/3600).toString().padStart(2,'0');
                 let m = Math.floor((d%3600)/60).toString().padStart(2,'0');
                 let s = (d%60).toString().padStart(2,'0');
                 document.getElementById('val-time').innerText = `T+${h}:${m}:${s}`;
                 document.getElementById('sys-clock').innerText = new Date().toISOString().split('T')[1].split('.')[0];
+
+                const updateHealth = (id, key) => {
+                    let el = document.getElementById(id);
+                    let txt = document.getElementById('status-text-' + key);
+                    if (now - lastSeen[key] < 3000 && lastSeen[key] !== 0) {
+                        el.className = 'health-box ok'; 
+                        txt.innerText = 'ONLINE';
+                    } else {
+                        el.className = 'health-box err'; 
+                        txt.innerText = 'OFFLINE';
+                    }
+                };
+                
+                if(simInterval) {
+                    ['mcb','asb','eps','gps'].forEach(k => {
+                        document.getElementById('health-'+k).className = 'health-box ok';
+                        document.getElementById('status-text-'+k).innerText = 'ONLINE';
+                    });
+                    let ping = 12 + Math.floor(Math.random() * 15); 
+                    let pingEl = document.getElementById('sys-ping');
+                    pingEl.innerText = ping + ' ms';
+                    pingEl.style.color = ping < 20 ? 'var(--success)' : 'var(--warn)';
+                } else {
+                    updateHealth('health-mcb', 'mcb');
+                    updateHealth('health-asb', 'asb');
+                    updateHealth('health-eps', 'eps');
+                    updateHealth('health-gps', 'gps');
+                    let pingEl = document.getElementById('sys-ping');
+                    pingEl.innerText = '--- ms';
+                    pingEl.style.color = '#475569';
+                }
+
             }, 1000);
+        }
+
+        let simInterval = null;
+        let simTime = 0;
+        let simLat = 14.87, simLon = 102.01; 
+
+        window.toggleSimulator = function() {
+            const btn = document.getElementById('btn-sim');
+            if (simInterval) {
+                clearInterval(simInterval);
+                simInterval = null;
+                btn.innerText = "SIMULATE";
+                btn.classList.remove('sim-btn-active');
+                log('SYS', 'Simulation Profile TERMINATED.');
+                ['mcb','asb','eps','gps'].forEach(k => lastSeen[k] = 0); 
+            } else {
+                btn.innerText = "STOP SIM";
+                btn.classList.add('sim-btn-active');
+                log('SYS', 'EDGE FLYTE Simulation Profile INITIATED.');
+                
+                let roll = 0, pitch = 0, yaw = 0;
+                let battV = 4.2;
+                let alt = 400;
+                
+                simInterval = setInterval(() => {
+                    simTime += 0.2; 
+                    
+                    simLat += 0.0001; simLon += 0.0002;
+                    let pktB = `#B,GPS,${alt.toFixed(1)},12,7.66,${simLat.toFixed(5)},${simLon.toFixed(5)}*CS\n`;
+                    
+                    let temp = 25 + Math.sin(simTime * 0.1) * 5;
+                    let humid = 45 + Math.cos(simTime * 0.1) * 10;
+                    let pktC = `#C,ENV,${temp.toFixed(1)},0,${humid.toFixed(1)}*CS\n`;
+                    
+                    let ax = Math.sin(simTime)*0.5; let ay = Math.cos(simTime)*0.5; let az = 9.8;
+                    let pktD = `#D,ACC,${ax.toFixed(2)},${ay.toFixed(2)},${az.toFixed(2)}*CS\n`;
+                    
+                    let gx = Math.sin(simTime)*10; let gy = Math.cos(simTime)*10; let gz = 5;
+                    let pktE = `#E,GYR,${gx.toFixed(1)},${gy.toFixed(1)},${gz.toFixed(1)}*CS\n`;
+                    
+                    let mx = 30 + Math.sin(simTime)*5; let my = -20 + Math.cos(simTime)*5; let mz = 40;
+                    let pktF = `#F,MAG,${mx.toFixed(1)},${my.toFixed(1)},${mz.toFixed(1)}*CS\n`;
+                    
+                    battV -= 0.0002; if(battV < 3.3) battV = 4.2;
+                    let pct = ((battV - 3.3) / 0.9) * 100;
+                    let pktG = `#G,EPS,1,1,1,1,${battV.toFixed(2)},${pct.toFixed(1)}*CS\n`;
+                    
+                    let sol1 = Math.max(0, Math.sin(simTime*0.5) * 5);
+                    let sol2 = Math.max(0, Math.cos(simTime*0.5) * 5);
+                    let pktH = `#H,SOL,${sol1.toFixed(2)},${sol2.toFixed(2)},0*CS\n`;
+                    
+                    roll = Math.sin(simTime * 0.2) * 45; 
+                    pitch = Math.cos(simTime * 0.1) * 30; 
+                    yaw += 1; 
+                    if(yaw>180) yaw-=360;
+                    
+                    let cr = Math.cos(roll*Math.PI/180 * 0.5); let sr = Math.sin(roll*Math.PI/180 * 0.5);
+                    let cp = Math.cos(pitch*Math.PI/180 * 0.5); let sp = Math.sin(pitch*Math.PI/180 * 0.5);
+                    let cy = Math.cos(yaw*Math.PI/180 * 0.5); let sy = Math.sin(yaw*Math.PI/180 * 0.5);
+                    let qw = cr * cp * cy + sr * sp * sy; let qx = sr * cp * cy - cr * sp * sy;
+                    let qy = cr * sp * cy + sr * cp * sy; let qz = cr * cp * sy - sr * sp * cy;
+                    let pktI = `#I,ATT,${qw.toFixed(4)},${qx.toFixed(4)},${qy.toFixed(4)},${qz.toFixed(4)}*CS\n`;
+                    
+                    let press = 1013.25 - (alt * 0.12);
+                    let pktJ = `#J,PRS,0,0,0,${press.toFixed(2)}*CS\n`;
+                    
+                    processRawSerial(pktB);
+                    processRawSerial(pktC);
+                    processRawSerial(pktD);
+                    processRawSerial(pktE);
+                    processRawSerial(pktF);
+                    if(Math.random() > 0.5) processRawSerial(pktG);
+                    if(Math.random() > 0.5) processRawSerial(pktH);
+                    processRawSerial(pktI);
+                    processRawSerial(pktJ);
+                    
+                    document.getElementById('val-rssi').innerText = (-60 + Math.floor(Math.sin(simTime)*10));
+                    document.getElementById('val-co2').innerHTML = `${400 + Math.floor(Math.sin(simTime*0.5)*50)} <small style="font-size:9px; color:#64748b;">PPM</small>`;
+                    
+                }, 200); 
+            }
         }
 
         window.switchMainView = function(viewId, btn) {
@@ -570,240 +856,27 @@
             document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
             document.getElementById('view-' + viewId).classList.add('active');
             if(viewId === 'map' && lMap) setTimeout(() => { lMap.invalidateSize(); }, 300);
-            
-            if(viewId === 'dashboard' && renderer && camera) {
-                setTimeout(() => {
-                    const cont = document.getElementById('3d-attitude-container');
-                    camera.aspect = cont.clientWidth / cont.clientHeight;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(cont.clientWidth, cont.clientHeight);
-                }, 100);
-            }
         }
 
         let globalLogs = [];
         function log(type, msg) {
             let ts = new Date().toLocaleTimeString('en-US',{hour12:false});
-            globalLogs.unshift([ts, type, msg]);
             let div = document.createElement('div'); div.className = 'log';
             let c = type==='TX'?'l-tx':(type==='RX'?'l-rx':(type==='ERR'?'l-err':'l-sys'));
-            div.innerHTML = `<span style="color:#667; font-size:9px; margin-right:5px;">${ts}</span><span class="${c}" style="margin-right:5px;">[${type}]</span>${msg}`;
+            div.innerHTML = `<span style="color:#64748b; font-size:9px; margin-right:5px;">${ts}</span><span class="${c}" style="margin-right:5px;">[${type}]</span>${msg}`;
             let box = document.getElementById('dashboard-log');
             box.prepend(div); if(box.childElementCount > 100) box.lastChild.remove();
-        }
-        function exportLogToPDF() {
-            if(!window.jspdf) {
-                console.error('jsPDF library not loaded');
-                return;
-            }
-            
-            const doc = new window.jspdf.jsPDF();
-            
-            doc.setProperties({
-                title: 'HELIOS X-1 OFFICIAL TELEMETRY REPORT',
-                subject: 'HELIOS X-1 Ground Station Data Log',
-                author: 'HELIOS X-1 Ground Station',
-                keywords: 'satellite, telemetry, mission control',
-                creator: 'HELIOS X-1 System v3.0'
-            });
-            
-            const missionStartTime = missionStart || Date.now();
-            const missionElapsed = Math.floor((Date.now() - missionStartTime) / 1000);
-            const hours = Math.floor(missionElapsed / 3600);
-            const minutes = Math.floor((missionElapsed % 3600) / 60);
-            const seconds = missionElapsed % 60;
-            const missionTimeStr = `T+${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            
-            doc.setFontSize(16);
-            doc.setTextColor(41, 128, 185);
-            doc.text('HELIOS X-1 OFFICIAL TELEMETRY REPORT', 105, 20, { align: 'center' });
-            
-            doc.setFontSize(10);
-            doc.setTextColor(100, 100, 100);
-            const metadata = [
-                ['Mission:', 'HELIOS X-1'],
-                ['Operator:', 'SUT_LIDARS'],
-                ['Generated:', new Date().toLocaleString()],
-                ['Duration:', missionTimeStr]
-            ];
-            
-            let yPos = 35;
-            metadata.forEach(([label, value]) => {
-                doc.text(label, 20, yPos, { align: 'left' });
-                doc.text(value, 60, yPos, { align: 'left' });
-                yPos += 8;
-            });
-            
-            doc.setDrawColor(41, 128, 185);
-            doc.setLineWidth(0.5);
-            doc.line(20, yPos, 190, yPos);
-            
-            yPos += 15;
-            doc.setFontSize(12);
-            doc.setTextColor(41, 128, 185);
-            doc.text('MISSION SUMMARY', 105, yPos, { align: 'center' });
-            
-            yPos += 12;
-            doc.setFontSize(10);
-            doc.setTextColor(60, 60, 60);
-            const summaryData = [
-                ['Total Log Entries:', globalLogs.length.toString()],
-                ['Mission Elapsed Time:', missionTimeStr],
-                ['System Status:', 'OPERATIONAL']
-            ];
-            
-            summaryData.forEach(([label, value]) => {
-                doc.text(label, 30, yPos, { align: 'left' });
-                doc.text(value, 120, yPos, { align: 'left' });
-                yPos += 8;
-            });
-            
-            doc.setDrawColor(41, 128, 185);
-            doc.line(20, yPos, 190, yPos);
-            
-            yPos += 15;
-            doc.setFontSize(12);
-            doc.setTextColor(41, 128, 185);
-            doc.text('TELEMETRY DATA LOG', 105, yPos, { align: 'center' });
-            
-            yPos += 15;
-            
-            const tableData = globalLogs.map(([timestamp, type, message]) => [
-                timestamp,
-                type,
-                message
-            ]);
-            
-            doc.autoTable({
-                head: ['TIME', 'TYPE', 'MESSAGE'],
-                body: tableData,
-                startY: yPos,
-                theme: 'striped',
-                headStyles: {
-                    fillColor: [41, 128, 185],
-                    textColor: 255,
-                    fontStyle: 'helvetica',
-                    fontSize: 10
-                },
-                bodyStyles: {
-                    fillColor: [245, 245, 245],
-                    textColor: 60,
-                    fontStyle: 'courier',
-                    fontSize: 9
-                },
-                alternateRowStyles: {
-                    fillColor: [255, 255, 255],
-                    textColor: 60,
-                    fontStyle: 'courier',
-                    fontSize: 9
-                },
-                margin: { top: 10, left: 20, right: 20, bottom: 20 },
-                styles: { cellPadding: 3, lineWidth: 0.1 }
-            });
-            
-            const pageCount = doc.internal.getNumberOfPages();
-            const pageHeight = doc.internal.pageSize.height;
-            
-            for (let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8);
-                doc.setTextColor(100, 100, 100);
-                doc.text(`Page ${i} of ${pageCount}`, 190, pageHeight - 10, { align: 'center' });
-                
-                doc.setFontSize(7);
-                doc.setTextColor(150, 150, 150);
-                doc.text('HELIOS X-1 Ground Station - Official Data Log - CONFIDENTIAL', 105, pageHeight - 15, { align: 'center' });
-            }
-            
-            doc.save('HELIOS_X-1_Mission_Report.pdf');
         }
 
         var lMap, satMark, pathLine; let orbitPath = []; 
         document.addEventListener('DOMContentLoaded', () => {
             try {
-                lMap = L.map('map-view', { zoomControl: false }).setView([13.75, 100.50], 3);
+                lMap = L.map('map-view', { zoomControl: false }).setView([14.87, 102.01], 5);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(lMap);
-                satMark = L.circleMarker([0,0], { color: '#00f0ff', radius: 5, fillOpacity: 1 }).addTo(lMap);
+                satMark = L.circleMarker([14.87, 102.01], { color: '#00bfff', radius: 4, fillOpacity: 1 }).addTo(lMap);
                 pathLine = L.polyline([], { color: '#f36c21', weight: 2, dashArray: '4, 4', opacity: 0.8 }).addTo(lMap);
             } catch(e) {}
         });
-        function updateMap(lat, lon) {
-            if(!lMap) return;
-            let pos = [parseFloat(lat), parseFloat(lon)];
-            satMark.setLatLng(pos); lMap.panTo(pos);
-            orbitPath.push(pos); if (orbitPath.length > 300) orbitPath.shift(); 
-            pathLine.setLatLngs(orbitPath);
-            document.getElementById('d-lat').innerText = parseFloat(lat).toFixed(4); document.getElementById('d-lon').innerText = parseFloat(lon).toFixed(4);
-        }
-
-        let scene, camera, renderer, satModelPivot;
-        
-        let targetRot = { roll: 0, pitch: 0, yaw: 0 };
-        const LERP_FACTOR = 0.08; 
-
-        function init3DModel() {
-            const container = document.getElementById('3d-attitude-container');
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(0, 0, 5);
-
-            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); scene.add(ambientLight);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1); dirLight.position.set(5, 5, 5); scene.add(dirLight);
-
-            const loader = new THREE.GLTFLoader();
-            loader.load('cubesat.glb', function (gltf) {
-                document.getElementById('3d-loading-text').style.display = 'none';
-                container.appendChild(renderer.domElement);
-                
-                let rawModel = gltf.scene;
-
-                const box = new THREE.Box3().setFromObject(rawModel);
-                const center = box.getCenter(new THREE.Vector3());
-                const size = box.getSize(new THREE.Vector3());
-                const maxDim = Math.max(size.x, size.y, size.z);
-                const targetSize = 1.8; 
-                const scale = targetSize / maxDim; 
-                
-                rawModel.scale.set(scale, scale, scale);
-                rawModel.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
-
-                satModelPivot = new THREE.Group();
-                satModelPivot.add(rawModel);
-                scene.add(satModelPivot);
-
-            }, undefined, function (error) {
-                console.error('Error loading 3D model:', error);
-                document.getElementById('3d-loading-text').innerHTML = '<span style="color:var(--danger)">ERROR LOADING MODEL<br>Check Console</span>';
-            });
-
-            window.addEventListener('resize', () => {
-                if(container.clientWidth > 0) {
-                    camera.aspect = container.clientWidth / container.clientHeight;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(container.clientWidth, container.clientHeight);
-                }
-            });
-            animate3D();
-        }
-
-        function animate3D() {
-            requestAnimationFrame(animate3D);
-            
-            if (satModelPivot) {
-                const targetRollRad = targetRot.roll * (Math.PI / 180);
-                const targetPitchRad = targetRot.pitch * (Math.PI / 180);
-                const targetYawRad = targetRot.yaw * (Math.PI / 180);
-                
-                satModelPivot.rotation.z += (targetRollRad - satModelPivot.rotation.z) * LERP_FACTOR;
-                satModelPivot.rotation.x += (targetPitchRad - satModelPivot.rotation.x) * LERP_FACTOR;
-                satModelPivot.rotation.y += (targetYawRad - satModelPivot.rotation.y) * LERP_FACTOR;
-            }
-            
-            renderer.render(scene, camera);
-        }
     </script>
 </body>
 </html>
